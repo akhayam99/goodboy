@@ -1,23 +1,15 @@
 import { useEffect, useRef } from 'react';
-import type { Notification, NotificationAction } from '@goodboy/db';
-import { formatError, inlineMarkdownText } from '@goodboy/ui';
+import type { Notification } from '@goodboy/db';
+import { inlineMarkdownText } from '@goodboy/ui';
 import type { Session, Workspace } from '@goodboy/types';
-import { sessionPlace, useAppStore } from '../../../../store';
-import { useToast, type ToastAction } from '../../../../shared/components/Toast';
-import type { ImpactScope } from '../../../impact/lib';
-import { openImpactStudio } from '../../../impact/openImpactStudio';
-import { CLI_LABEL } from '../../../providers/cliLabel';
-import { openProviderCliUpdate } from '../../../providers/openProviderCliUpdate';
-import { openStorage } from '../../../storage/openStorage';
-import { mapAgentAction } from './mapAgentAction';
-import { mapRecoveryAction } from './mapRecoveryAction';
+import { useAppStore } from '../../../../store';
+import { useToast } from '../../../../shared/components/Toast';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
-import { attentionPlaceLabelOf } from '../../../session/attentionPlaceLabel';
-import { mapOpenPlaceAction } from './mapOpenPlaceAction';
-import { openToolPane } from '../../../session/panes/openToolPane';
 import { sessionTitle } from '../../../../shared/utils/sessionTitle';
 import { markPointersActed } from '../../markPointersActed';
-import { mapRetryAction } from './mapRetryAction';
+import { mapNotificationAction } from './mapNotificationAction';
+import { staleToastIdsOf } from './staleToastIdsOf';
+import { subscribeTransientNotices } from '../../../../store/slices/notifications/transientNotices';
 
 export const pickFreshFailures = (
   notifications: ReadonlyArray<Notification>,
@@ -58,181 +50,54 @@ export const notificationContext = (
   return parts.length > 0 ? parts.join(' · ') : undefined;
 };
 
-export const mapNotificationAction = (
-  action: NotificationAction,
-  store: ReturnType<typeof useAppStore.getState>,
-  notification: Notification,
-): ToastAction | undefined => {
-  if (action.kind === 'retry-summarizer') {
-    const { sessionId } = action;
-    const lastAttempt = store.summarizerStatus[sessionId]?.lastAttempt;
-    if (lastAttempt == null) {
-      return undefined;
-    }
-    return {
-      label: 'Retry',
-      onClick: () => {
-        store.retrySummarizer(sessionId);
-      },
-    };
-  }
-  if (action.kind === 'retry-orchestrator') {
-    const { sessionId, workflowRunId } = action;
-    return {
-      label: 'Retry',
-      onClick: () => {
-        void store.orchestrateNextStep(sessionId, workflowRunId, { bypassGate: true });
-      },
-    };
-  }
-  if (action.kind === 'retry-step-summary') {
-    const { sessionId, agentId } = action;
-    return {
-      label: 'Retry',
-      onClick: () => {
-        void store.retryStepSummary({ sessionId, agentId });
-      },
-    };
-  }
-  if (action.kind === 'open-activity') {
-    const { sessionId } = action;
-    return {
-      label: attentionPlaceLabelOf({ reason: null }),
-      onClick: () => {
-        store.navigate({ to: sessionPlace({ sessionId, lens: null }) });
-      },
-    };
-  }
-  if (action.kind === 'open-place') {
-    return mapOpenPlaceAction({ action, store, notification });
-  }
-  if (action.kind === 'continue-agent' || action.kind === 'open-agent') {
-    return mapAgentAction({ action, store });
-  }
-  if (action.kind === 'open-budget') {
-    const scope: ImpactScope =
-      action.sessionId != null
-        ? { kind: 'session', sessionId: action.sessionId }
-        : { kind: 'overview' };
-    return {
-      label: 'Open spend',
-      onClick: () => {
-        openImpactStudio({ scope });
-      },
-    };
-  }
-  if (action.kind === 'retry-publication') {
-    const { sessionId } = action;
-    return {
-      label: 'Check and retry',
-      onClick: () => {
-        void (async () => {
-          const preview = await store.retryPublication({ sessionId, mountId: null });
-          if (preview.publicationId === null) {
-            return;
-          }
-          await store.publishConversations({
-            sessionId,
-            publicationId: preview.publicationId,
-          });
-        })().catch((err: unknown) => {
-          void store.emitNotification({
-            kind: 'error',
-            severity: 'error',
-            title: 'Retry failed, the conversations stay open',
-            body: formatError(err),
-            sessionId,
-          });
-        });
-      },
-    };
-  }
-  if (action.kind === 'open-orphan-worktrees') {
-    const { workspaceId } = action;
-    return {
-      label: 'Review storage',
-      onClick: () => openStorage({ scope: { kind: 'workspace', id: workspaceId } }),
-    };
-  }
-  if (action.kind === 'open-storage') {
-    const { filter, workspaceId } = action;
-    return {
-      label: 'Review storage',
-      onClick: () =>
-        openStorage({
-          filter: filter ?? 'review',
-          scope: workspaceId == null ? { kind: 'all' } : { kind: 'workspace', id: workspaceId },
-        }),
-    };
-  }
-  if (action.kind === 'retry-update') {
-    return {
-      label: 'Retry',
-      onClick: () => {
-        void store.applyUpdate();
-      },
-    };
-  }
-  if (action.kind === 'retry-notification-scope') {
-    const { scope } = action;
-    return {
-      label: 'Retry',
-      onClick: () => {
-        void store.setNotificationScope(scope);
-      },
-    };
-  }
-  if (action.kind === 'update-provider-cli') {
-    const { providerId } = action;
-    return {
-      label: `Update ${CLI_LABEL[providerId]}`,
-      onClick: () => {
-        openProviderCliUpdate({ providerId });
-      },
-    };
-  }
-  if (action.kind === 'open-lens') {
-    const { sessionId, lens } = action;
-    return {
-      label: 'Show output',
-      onClick: () => {
-        openToolPane({ sessionId, pane: lens });
-      },
-    };
-  }
-  if (action.kind === 'retry-action') {
-    return mapRetryAction({ action, store, notification });
-  }
-  if (
-    action.kind === 'open-settings' ||
-    action.kind === 'reveal-path' ||
-    action.kind === 'retry-push'
-  ) {
-    return mapRecoveryAction({ action, store });
-  }
-  const _exhaustive: never = action;
-  return undefined;
-};
-
 export const NotificationToastBridge = () => {
   const notifications = useAppStore((s) => s.notifications);
   const sessions = useAppStore((s) => s.sessions);
   const workspaces = useAppStore((s) => s.workspaces);
-  const { previewNotification } = useToast();
+  const { previewNotification, showToast, removeNotificationIds } = useToast();
 
   const seen = useRef<Set<string>>(new Set());
+  const shown = useRef<Set<string>>(new Set());
   const mountedAt = useRef<number>(Date.now());
 
   useEffect(() => {
+    return subscribeTransientNotices({
+      listener: ({ notification }) => {
+        const store = useAppStore.getState();
+        const toastAction = mapNotificationAction({ store, notification });
+        showToast({
+          kind: 'success',
+          title: notification.title,
+          message: notification.body ?? '',
+          context: notificationContext(notification, store.sessions, store.workspaces),
+          dedupeKey: notification.coalesceKey ?? undefined,
+          action: toastAction,
+        });
+      },
+    });
+  }, [showToast]);
+
+  useEffect(() => {
+    const stale = staleToastIdsOf({ shownIds: shown.current, notifications });
+    if (stale.size > 0) {
+      stale.forEach((id) => shown.current.delete(id));
+      removeNotificationIds({ ids: stale });
+    }
     for (const n of pickFreshFailures(notifications, seen.current, mountedAt.current)) {
       const store = useAppStore.getState();
-      const toastAction = n.action != null ? mapNotificationAction(n.action, store, n) : undefined;
+      const toastAction = mapNotificationAction({ store, notification: n });
+      shown.current.add(n.id);
       previewNotification({
         severity: n.severity === 'error' ? 'error' : 'warning',
         title: n.title,
         message: n.body ?? '',
         context: notificationContext(n, sessions, workspaces),
         persist: n.severity === 'error',
+        dedupeKey: n.coalesceKey ?? undefined,
+        notificationIds: [n.id],
+        onDismiss: () => {
+          shown.current.delete(n.id);
+        },
         action:
           toastAction === undefined
             ? undefined
@@ -245,7 +110,7 @@ export const NotificationToastBridge = () => {
               },
       });
     }
-  }, [notifications, sessions, workspaces, previewNotification]);
+  }, [notifications, sessions, workspaces, previewNotification, removeNotificationIds]);
 
   return null;
 };

@@ -197,15 +197,26 @@ describe('emit coalesces by key', () => {
     expect(useAppStore.getState().notifications).toEqual([]);
   });
 
-  it('writes a success row already read', async () => {
+  it('writes an information row already read', async () => {
+    await useAppStore.getState().emitNotification({
+      kind: 'pr-created',
+      severity: 'info',
+      title: 'Pull request opened',
+    });
+
+    expect(await unreadStoredIds()).toEqual([]);
+    expect(await storedRows()).toHaveLength(1);
+  });
+
+  it('writes no row for a success', async () => {
     await useAppStore.getState().emitNotification({
       kind: 'pr-created',
       severity: 'success',
       title: 'Pull request opened',
     });
 
-    expect(await unreadStoredIds()).toEqual([]);
-    expect(await storedRows()).toHaveLength(1);
+    expect(await storedRows()).toEqual([]);
+    expect(useAppStore.getState().notifications).toEqual([]);
   });
 
   it('lets the sweep read the older duplicate that a second window inserted', async () => {

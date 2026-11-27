@@ -17,6 +17,8 @@ export type ShowToastParams = {
 export type ShowToast = (params: ShowToastParams) => void;
 
 export type PreviewNotificationParams = {
+  readonly dedupeKey?: string;
+  readonly notificationIds?: ReadonlyArray<string>;
   readonly severity: ToastKind;
   readonly title: string;
   readonly message: string;
@@ -26,9 +28,14 @@ export type PreviewNotificationParams = {
   readonly onDismiss?: () => void;
 };
 
+export type RemoveNotificationIdsParams = {
+  readonly ids: ReadonlySet<string>;
+};
+
 export type ToastContextValue = {
   showToast: ShowToast;
   previewNotification: (params: PreviewNotificationParams) => void;
+  removeNotificationIds: (params: RemoveNotificationIdsParams) => void;
 };
 
 export const ToastContext = createContext<ToastContextValue | null>(null);

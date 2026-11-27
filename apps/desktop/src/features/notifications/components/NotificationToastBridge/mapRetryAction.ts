@@ -5,6 +5,7 @@ import {
   actionRetryOf,
   runActionRetry,
 } from '../../../../store/slices/notifications/actionRetries';
+import { CHECK_STATE } from '../../../../store/slices/notifications/errorRecovery';
 import { NAMES } from '../../../../shared/utils/names';
 
 type Params = {
@@ -22,15 +23,34 @@ export const mapRetryAction = ({
   if (actionRetryOf({ retryId }) === undefined) {
     return undefined;
   }
-  const { coalesceKey } = notification;
+  const { coalesceKey, id, sessionId } = notification;
+  const settle = async (): Promise<void> => {
+    if (coalesceKey == null) {
+      await store.dismissNotification(id);
+      return;
+    }
+    await store.resolveNotifications([coalesceKey]);
+  };
+  let isRetryDone = false;
+  const run = async (): Promise<void> => {
+    if (!isRetryDone) {
+      isRetryDone = await runActionRetry({ retryId });
+    }
+    if (isRetryDone) {
+      await settle();
+    }
+  };
   return {
     label: action.label ?? NAMES.retry,
+    isKeptOpen: true,
     onClick: () => {
-      void runActionRetry({ retryId }).then((isDone) => {
-        if (!isDone || coalesceKey == null) {
-          return;
-        }
-        void store.resolveNotifications([coalesceKey]);
+      void run().catch((error: unknown) => {
+        void store.reportError({
+          recovery: CHECK_STATE,
+          title: "Couldn't finish the retry",
+          error,
+          ...(sessionId != null && { sessionId }),
+        });
       });
     },
   };
