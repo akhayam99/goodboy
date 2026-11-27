@@ -1,4 +1,5 @@
 import { gridWithDock } from './gridWithDock';
+import { heldBack } from './heldBack';
 import { isWorkspaceTool } from './isWorkspaceTool';
 import { panelsOf } from './panelsOf';
 import type { DrawerGrid, DrawerSliceState, OpenDrawer } from './state';
@@ -27,7 +28,7 @@ const refilled = ({ drawer, back, grid }: Params): Pair => {
 };
 
 export const settledSlot = ({ drawer, back, grid }: Params): DrawerSliceState => {
-  const pair = refilled({ drawer, back, grid });
+  const pair = refilled({ drawer, back: heldBack({ top: drawer, back }), grid });
   const panels = panelsOf({ top: pair.drawer, back: pair.drawerBack, grid });
   const tools = gridWithDock({ grid, dock: panels.dock });
   return { ...pair, drawerGrid: { ...tools, focus: panels.focus } };

@@ -43,19 +43,10 @@ const openReportOverTranscript = async (ctx: Ctx): Promise<void> => {
 
 export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
   {
-    name: 'slot: the drawer it replaced waits in a back chip, the chip swaps, Esc walks back',
+    name: 'slot: a drawer opened over another shows no back button, Esc closes it',
     covers: ['openDrawer', 'closeDrawer'],
     open: openReportOverTranscript,
     lands: async () => {
-      await userEvent
-        .setup()
-        .click(await screen.findByRole('button', { name: 'Back to Transcript' }));
-      await settle();
-      await waitFor(() => expect(openedKind()).toBe('transcript'), WAIT);
-      expect(await screen.findByRole('button', { name: 'Back to New · Report' })).toBeDefined();
-
-      await pressEscape();
-      await waitFor(() => expect(openedKind()).toBe('new'), WAIT);
       expect(screen.queryByRole('button', { name: /^Back to / })).toBeNull();
 
       await pressEscape();
@@ -63,14 +54,10 @@ export const DRAWER_CHROME_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
-    name: 'slot: ⌘⇧W closes the top of the slot, then the drawer from the chip',
+    name: 'slot: ⌘⇧W closes the top of the slot',
     covers: ['key:slot.close', 'closeDrawer'],
     open: openReportOverTranscript,
     lands: async () => {
-      pressShortcut({ id: 'slot.close' });
-      await settle();
-      await waitFor(() => expect(openedKind()).toBe('transcript'), WAIT);
-
       pressShortcut({ id: 'slot.close' });
       await settle();
       await waitFor(() => expect(openedKind()).toBeNull(), WAIT);
