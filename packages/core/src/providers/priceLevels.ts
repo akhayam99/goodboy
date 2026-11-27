@@ -9,12 +9,14 @@ type RequestParams = {
   readonly price: ModelPrice;
   readonly isCacheInInput: boolean;
   readonly canUseLevel: boolean;
+  readonly longCacheWriteFactor: number;
 };
 
 type UsageParams = {
   readonly usage: ProviderUsage;
   readonly price: ModelPrice;
   readonly isCacheInInput: boolean;
+  readonly longCacheWriteFactor?: number;
 };
 
 type PromptParams = {
@@ -50,6 +52,7 @@ const computeRequestCostUsd = ({
   price,
   isCacheInInput,
   canUseLevel,
+  longCacheWriteFactor,
 }: RequestParams): number => {
   const level = price.aboveLevel;
   const isAboveLevel =
@@ -60,29 +63,43 @@ const computeRequestCostUsd = ({
   const billableInput = isCacheInInput
     ? Math.max(0, request.inputTokens - request.cachedInputTokens)
     : request.inputTokens;
+  const longWrites = Math.min(
+    request.cacheCreationInputTokens,
+    request.longCacheWriteInputTokens ?? 0,
+  );
+  const cacheWriteInputEquivalent =
+    (request.cacheCreationInputTokens - longWrites) * CACHE_WRITE_FACTOR +
+    longWrites * longCacheWriteFactor;
   return (
     (billableInput * rates.inputPerMtok) / 1_000_000 +
     (request.cachedInputTokens * (rates.cachedInputPerMtok ?? rates.inputPerMtok)) / 1_000_000 +
-    (request.cacheCreationInputTokens * rates.inputPerMtok * CACHE_WRITE_FACTOR) / 1_000_000 +
+    (cacheWriteInputEquivalent * rates.inputPerMtok) / 1_000_000 +
     (request.outputTokens * rates.outputPerMtok) / 1_000_000
   );
 };
 
-export const computeLeveledCostUsd = ({ usage, price, isCacheInInput }: UsageParams): number => {
+export const computeLeveledCostUsd = ({
+  usage,
+  price,
+  isCacheInInput,
+  longCacheWriteFactor = CACHE_WRITE_FACTOR,
+}: UsageParams): number => {
   const large = usage.largeRequests ?? [];
   const total: RequestUsage = {
     inputTokens: usage.inputTokens,
     outputTokens: usage.outputTokens,
     cachedInputTokens: usage.cachedInputTokens,
     cacheCreationInputTokens: usage.cacheCreationInputTokens ?? 0,
+    longCacheWriteInputTokens: usage.longCacheWriteInputTokens ?? 0,
   };
+  const turn = { price, isCacheInInput, longCacheWriteFactor };
   if (price.aboveLevel === undefined || large.length === 0) {
-    return computeRequestCostUsd({ request: total, price, isCacheInInput, canUseLevel: false });
+    return computeRequestCostUsd({ ...turn, request: total, canUseLevel: false });
   }
   let rest = total;
   let leveled = 0;
   for (const request of large) {
-    leveled += computeRequestCostUsd({ request, price, isCacheInInput, canUseLevel: true });
+    leveled += computeRequestCostUsd({ ...turn, request, canUseLevel: true });
     rest = {
       inputTokens: Math.max(0, rest.inputTokens - request.inputTokens),
       outputTokens: Math.max(0, rest.outputTokens - request.outputTokens),
@@ -91,9 +108,11 @@ export const computeLeveledCostUsd = ({ usage, price, isCacheInInput }: UsagePar
         0,
         rest.cacheCreationInputTokens - request.cacheCreationInputTokens,
       ),
+      longCacheWriteInputTokens: Math.max(
+        0,
+        (rest.longCacheWriteInputTokens ?? 0) - (request.longCacheWriteInputTokens ?? 0),
+      ),
     };
   }
-  return (
-    leveled + computeRequestCostUsd({ request: rest, price, isCacheInInput, canUseLevel: false })
-  );
+  return leveled + computeRequestCostUsd({ ...turn, request: rest, canUseLevel: false });
 };

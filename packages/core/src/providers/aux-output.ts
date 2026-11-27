@@ -1,12 +1,14 @@
 import { asRecord } from '../asRecord';
 import type { ProviderId } from '@goodboy/types';
 import { readCursorObjects } from './readCursorObjects';
+import { longCacheWriteTokensOf } from './shared/longCacheWriteTokensOf';
 
 export type AuxUsage = {
   readonly inputTokens: number;
   readonly outputTokens: number;
   readonly cachedInputTokens: number;
   readonly cacheCreationInputTokens: number;
+  readonly longCacheWriteInputTokens?: number;
   readonly estimatedCostUsd?: number;
 };
 
@@ -73,6 +75,7 @@ const readEnvelopeUsage = (value: unknown): AuxUsage => {
   if (usage === null) {
     return ZERO_USAGE;
   }
+  const longCacheWrite = longCacheWriteTokensOf({ usage });
   return {
     inputTokens: asCount(usage['input_tokens'] ?? usage['inputTokens']),
     outputTokens: asCount(usage['output_tokens'] ?? usage['outputTokens']),
@@ -80,6 +83,7 @@ const readEnvelopeUsage = (value: unknown): AuxUsage => {
     cacheCreationInputTokens: asCount(
       usage['cache_creation_input_tokens'] ?? usage['cacheCreationInputTokens'],
     ),
+    ...(longCacheWrite !== undefined && { longCacheWriteInputTokens: longCacheWrite }),
   };
 };
 

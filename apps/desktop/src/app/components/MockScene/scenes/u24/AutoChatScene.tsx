@@ -21,6 +21,7 @@ import {
   autoSceneOf,
   type AutoSceneState,
 } from './autoSceneSeed';
+import { autoSceneSpendOf } from './autoSceneSpendOf';
 
 type Props = {
   readonly state: AutoSceneState;
@@ -80,15 +81,20 @@ export const AutoChatScene = ({
   useEffect(() => {
     seedActivityRunScene();
     const scene = autoSceneOf({ state });
+    const view = viewOf === undefined ? scene.view : viewOf({ view: scene.view });
     useAppStore.setState({
       sessionPhaseRuns: { [AUTO_SESSION.id]: scene.agents },
+      ...autoSceneSpendOf({
+        sessionId: AUTO_SESSION.id,
+        leadId: AUTO_ROOT_ID,
+        view,
+        recordedAt: TRAY_TURN.createdAt,
+      }),
       agentKindOverride: { [AUTO_ROOT_ID]: 'auto' },
       agentProviderOverride: { [AUTO_ROOT_ID]: 'anthropic' },
       agentModelOverride: { [AUTO_ROOT_ID]: 'opus-5.5' },
       agentEffortOverride: { [AUTO_ROOT_ID]: 'medium' },
-      autoTreeViews: {
-        [AUTO_SESSION.id]: [viewOf === undefined ? scene.view : viewOf({ view: scene.view })],
-      },
+      autoTreeViews: { [AUTO_SESSION.id]: [view] },
       ...(leadRows === undefined
         ? {}
         : {
