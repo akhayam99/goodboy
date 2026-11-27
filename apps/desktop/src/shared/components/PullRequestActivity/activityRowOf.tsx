@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { MessageSquare, Pencil, CircleX } from '@goodboy/ui/icons';
+import { MessageSquare, Pencil, GitPullRequestClosed } from '@goodboy/ui/icons';
 import { ICON_SIZE, cn, tintClasses, type WorkNodeMark, type WorkNodeState } from '@goodboy/ui';
 import type { PullRequestNouns } from '@goodboy/types';
 import { countNoun } from '../../utils/countNoun';
@@ -220,7 +220,10 @@ export const activityRowOf = ({
       };
     case 'closed':
       return {
-        lead: glyphLeadOf({ label: 'Closed', glyph: <CircleX size={GLYPH_SIZE} aria-hidden /> }),
+        lead: glyphLeadOf({
+          label: 'Closed',
+          glyph: <GitPullRequestClosed size={GLYPH_SIZE} aria-hidden />,
+        }),
         line: <>This {nouns.long} was closed</>,
         comments: [],
         open: null,
