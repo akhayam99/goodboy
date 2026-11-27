@@ -44,9 +44,9 @@ describe('CONCEPT_ICONS', () => {
     expect(CONCEPT_ICONS.terminal).toBe(SquareTerminal);
   });
 
-  it('keeps Ask this session apart from the Chat door and from Help', () => {
+  it('keeps Ask this session apart from the Chat door and from Questions', () => {
     expect(CONCEPT_ICONS.ask).not.toBe(CONCEPT_ICONS.chat);
-    expect(CONCEPT_ICONS.ask).not.toBe(CONCEPT_ICONS.help);
+    expect(CONCEPT_ICONS.ask).not.toBe(CONCEPT_ICONS.questions);
   });
 
   it('draws the Lead as Orchestrate, one glyph with the orchestrator it replaced', () => {
