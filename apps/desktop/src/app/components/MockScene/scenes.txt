@@ -75,6 +75,7 @@ ask-pane-streaming
 ask-pane-streaming-light
 ask-reset
 attn-noise
+attn-noise-seen
 auto-asks-you
 auto-chat-answering
 auto-chat-child

@@ -40,6 +40,7 @@ const makeSet = () => {
     const next = typeof patch === 'function' ? patch(state) : patch;
     state = { ...state, ...next };
   };
+  state = { ...state, loadSessionSlackDrafts: vi.fn(async () => undefined) };
   return { set, read: () => state };
 };
 
@@ -77,7 +78,10 @@ describe('decideSessionSlackDraft', () => {
     const { set, read } = makeSet();
     set({ sessionSlackDrafts: { [sessionId]: [first, second] } });
 
-    await decideSessionSlackDraft(set)({
+    await decideSessionSlackDraft(
+      set,
+      read,
+    )({
       sessionId,
       draftId: first.id,
       status: 'sent',
@@ -103,7 +107,7 @@ describe('decideSessionSlackDraft', () => {
       },
     });
 
-    await decideSessionSlackDraft(set)({ sessionId, draftId: first.id, status: 'discarded' });
+    await decideSessionSlackDraft(set, read)({ sessionId, draftId: first.id, status: 'discarded' });
 
     expect(decideSlackDraft).toHaveBeenCalledWith({ id: first.id, status: 'discarded' });
     expect(read().sessionSlackDrafts[sessionId]).toEqual([]);
