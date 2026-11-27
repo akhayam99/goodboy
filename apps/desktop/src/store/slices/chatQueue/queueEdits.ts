@@ -66,3 +66,6 @@ export const failQueuedTurn = ({ state, chatId, itemId, failure }: FailParams) =
     itemId,
     patch: { status: 'failed', failure },
   });
+
+export const isQueued = ({ state, chatId, itemId }: RemoveParams): boolean =>
+  queueOf({ state, chatId }).some((turn) => turn.id === itemId);

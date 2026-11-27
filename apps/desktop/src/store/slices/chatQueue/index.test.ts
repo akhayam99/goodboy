@@ -328,4 +328,67 @@ describe('the Chat queue', () => {
 
     expect(read().chatQueues).toEqual({});
   });
+
+  it('shows why a queued message could not be prepared, and keeps it', async () => {
+    const chatId = await startChat();
+    const image = new File([new Uint8Array([137, 80, 78, 71])], 'acme-trace.png', {
+      type: 'image/png',
+    });
+    read().enqueueChatMessage({
+      chatId,
+      content: 'two',
+      attachments: [
+        { id: 'img-1', fileName: image.name, mimeType: image.type, blob: image, relPath: null },
+      ],
+    });
+    if (holder.backend === null) {
+      throw new Error('no chat backend');
+    }
+    holder.backend = {
+      ...holder.backend,
+      writeImage: async () => {
+        throw new Error('the image folder is read only');
+      },
+    };
+
+    await read().drainChatQueue({ chatId });
+
+    expect(read().chatQueues[chatId]?.[0]).toMatchObject({
+      content: 'two',
+      status: 'failed',
+      failure: 'the image folder is read only',
+    });
+  });
+
+  it('never sends a queued message that left the queue while it was prepared', async () => {
+    const chatId = await startChat();
+    holdTurns();
+
+    const isSent = await read().sendChatMessage({
+      chatId,
+      content: 'two',
+      attachments: [],
+      queuedId: 'removed-meanwhile',
+    });
+
+    expect(isSent).toBe(false);
+    expect(holds).toHaveLength(0);
+    expect(askedIn({ chatId })).toEqual([]);
+  });
+
+  it('keeps draining after a turn started by the queue, one message per turn', async () => {
+    const chatId = await startChat();
+    const first = await startTurn({ chatId });
+    read().enqueueChatMessage({ chatId, content: 'two', attachments: [] });
+    read().enqueueChatMessage({ chatId, content: 'three', attachments: [] });
+    holdOf({ chatId }).release();
+    await first.done;
+    await vi.waitFor(() => expect(holds).toHaveLength(1));
+    holdOf({ chatId }).release();
+    await vi.waitFor(() => expect(holds).toHaveLength(1));
+
+    expect(askedIn({ chatId })).toEqual(['one', 'two', 'three']);
+    holdOf({ chatId }).release();
+    await settle({ chatId });
+  });
 });

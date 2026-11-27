@@ -81,6 +81,9 @@ const mount = ({ chatId, isStreaming = true }: MountParams) => {
   return { sent, view };
 };
 
+const png = (name: string) =>
+  new File([new Uint8Array([137, 80, 78, 71])], name, { type: 'image/png' });
+
 const field = (): HTMLTextAreaElement => screen.getByRole('textbox', { name: 'Message' });
 
 const rows = (): ReadonlyArray<HTMLElement> => screen.queryAllByTestId('queued-message-row');
@@ -204,5 +207,56 @@ describe('the Chat composer queue', () => {
     screen.getByText('Not delivered');
     expect(screen.getByRole('alert').textContent).toContain('disk full');
     screen.getByRole('button', { name: 'Retry' });
+  });
+
+  it('keeps the same box, and its focus, when the first message joins the tray', () => {
+    mount({ chatId: CHAT_A });
+    const before = field();
+
+    act(() => {
+      useAppStore
+        .getState()
+        .enqueueChatMessage({ chatId: CHAT_A, content: 'for A', attachments: [] });
+    });
+
+    expect(rows()).toHaveLength(1);
+    expect(field()).toBe(before);
+  });
+
+  it('does not edit a queued message over an image-only draft', async () => {
+    useAppStore
+      .getState()
+      .enqueueChatMessage({ chatId: CHAT_A, content: 'for A', attachments: [] });
+    mount({ chatId: CHAT_A });
+    await act(async () => {
+      fireEvent.paste(field(), { clipboardData: { files: [png('acme-trace.png')] } });
+    });
+    await screen.findByRole('button', { name: 'Remove acme-trace.png' });
+
+    expect(screen.getByRole('button', { name: 'for A' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('puts the images of an edited message back in the box with its text', async () => {
+    useAppStore.getState().enqueueChatMessage({
+      chatId: CHAT_A,
+      content: 'for A',
+      attachments: [
+        {
+          id: 'img-1',
+          fileName: 'harborline-trace.png',
+          mimeType: 'image/png',
+          blob: png('harborline-trace.png'),
+          relPath: null,
+        },
+      ],
+    });
+    mount({ chatId: CHAT_A });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'for A' }));
+    });
+
+    expect(field().value).toBe('for A');
+    await screen.findByRole('button', { name: 'Remove harborline-trace.png' });
   });
 });

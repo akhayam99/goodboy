@@ -16,7 +16,7 @@ import { liveTextRegistry } from '../../../features/chat/reveal/liveTextRegistry
 import { revealPacer } from '../../../features/chat/reveal/revealPacer';
 import { activeChatBackend } from '../../../features/workspace-chat/activeChatBackend';
 import type { ChatTurnOutcome } from '../../../features/conversation/chatTurnOutcome';
-import { withoutQueuedTurn } from '../chatQueue/queueEdits';
+import { isQueued, withoutQueuedTurn } from '../chatQueue/queueEdits';
 import { chatTitleFromQuestion, NEW_CHAT_TITLE } from './chatTitleFromQuestion';
 import { findChat } from './findChat';
 import { isChatImagesOn } from './isChatImagesOn';
@@ -114,10 +114,19 @@ export const sendChatMessage =
     try {
       history = get().chatMessages[chatId] ?? (await activeChatBackend.listMessages({ chatId }));
       images = await saveChatImages({ chatId, messageId: askedId, attachments: wanted, at });
-    } catch {
+    } catch (error) {
+      if (queuedId !== undefined) {
+        throw error;
+      }
       return false;
     } finally {
       sendsInFlight.delete(chatId);
+    }
+    if (
+      findChat({ state: get(), chatId }) === null ||
+      (queuedId !== undefined && !isQueued({ state: get(), chatId, itemId: queuedId }))
+    ) {
+      return false;
     }
     const asked = draftChatMessage({
       chatId,

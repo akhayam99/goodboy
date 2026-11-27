@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode, type RefObject } from 'react';
 
+import { cn } from '@goodboy/ui';
 import { PromptField, type PromptFieldFiles } from '../PromptField';
 import { SendStopControl } from '../SendStopControl';
 import { useEscapeArm } from '../../hooks/useEscapeArm';
@@ -19,6 +20,10 @@ export type RestoreTextParams = {
   readonly sent: string;
 };
 
+export type TrayParams = {
+  readonly isDraftEmpty: boolean;
+};
+
 type Props = {
   readonly label: string;
   readonly placeholder: string;
@@ -30,7 +35,7 @@ type Props = {
   readonly isImagesOn: boolean;
   readonly isAutoFocused?: boolean;
   readonly canQueue?: boolean;
-  readonly tray?: ReactNode;
+  readonly renderTray?: (params: TrayParams) => ReactNode;
   readonly restoredImages?: MessageComposerMessage['images'] | null;
   readonly minRows: number;
   readonly maxRows: number;
@@ -64,7 +69,7 @@ export const MessageComposer = ({
   isImagesOn,
   isAutoFocused = false,
   canQueue = false,
-  tray,
+  renderTray,
   restoredImages = null,
   minRows,
   maxRows,
@@ -82,7 +87,6 @@ export const MessageComposer = ({
   const { setAttachments } = images;
   const hasContent = text.trim() !== '' || attached.length > 0;
   const canSend = hasContent && (canQueue || !isStreaming);
-  const hasTray = tray != null;
 
   useEffect(() => {
     if (restoredImages !== null) {
@@ -170,11 +174,17 @@ export const MessageComposer = ({
     />
   );
 
-  if (!hasTray) {
+  if (renderTray === undefined) {
     return field;
   }
+  const tray = renderTray({ isDraftEmpty: !hasContent });
   return (
-    <div className="flex w-full flex-col [&>[data-composer-surface]]:rounded-t-none">
+    <div
+      className={cn(
+        'flex w-full flex-col',
+        tray != null && '[&>[data-composer-surface]]:rounded-t-none',
+      )}
+    >
       {tray}
       {field}
     </div>

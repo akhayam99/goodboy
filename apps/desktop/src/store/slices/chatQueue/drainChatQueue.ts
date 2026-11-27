@@ -20,7 +20,13 @@ export const drainChatQueue =
     if (head.status !== wantedStatus || (itemId !== undefined && head.id !== itemId)) {
       return;
     }
-    drainsInFlight.add(chatId);
+    const token = Symbol('drain');
+    const release = (): void => {
+      if (drainsInFlight.get(chatId) === token) {
+        drainsInFlight.delete(chatId);
+      }
+    };
+    drainsInFlight.set(chatId, token);
     let failure: string | null = null;
     try {
       const isStarted = await get().sendChatMessage({
@@ -28,7 +34,7 @@ export const drainChatQueue =
         content: head.content,
         attachments: head.attachments,
         queuedId: head.id,
-        onAccepted: () => drainsInFlight.delete(chatId),
+        onAccepted: release,
       });
       if (!isStarted && get().chatStreams[chatId] === undefined) {
         failure = NOT_DELIVERED;
@@ -36,7 +42,7 @@ export const drainChatQueue =
     } catch (error) {
       failure = formatError(error);
     } finally {
-      drainsInFlight.delete(chatId);
+      release();
     }
     if (failure === null) {
       return;

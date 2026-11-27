@@ -70,12 +70,12 @@ export const ChatComposer = ({
       canQueue
       fieldRef={fieldRef}
       restoredImages={restored}
-      tray={
+      renderTray={({ isDraftEmpty }) =>
         queue.rows.length === 0 ? null : (
           <ComposerTray>
             <QueuedMessages
               items={queue.rows}
-              canEdit={text.trim() === ''}
+              canEdit={isDraftEmpty}
               failure={queue.failure}
               onEdit={queue.onEdit}
               onRemove={queue.onRemove}
