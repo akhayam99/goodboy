@@ -19,6 +19,7 @@ import type {
 type SiteParams = {
   readonly tabId: string;
   readonly host: string;
+  readonly extraHosts: ReadonlyArray<string>;
 };
 
 type WorkspaceParams = {
@@ -115,8 +116,12 @@ export const browserHost = {
   reload: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_reload', { args: { tabId } }),
   reloadFromOrigin: ({ tabId }: TabParams) =>
     invokeCommand<null>('browser_tab_reload_from_origin', { args: { tabId } }),
-  clearSiteData: ({ tabId, host }: SiteParams) =>
-    invokeCommand<BrowserSiteCleared>('browser_site_data_clear', { args: { tabId, host } }),
+  clearSiteData: ({ tabId, host, extraHosts }: SiteParams) =>
+    invokeCommand<BrowserSiteCleared>('browser_site_data_clear', {
+      args: { tabId, host, extraHosts },
+    }),
+  tabTrail: ({ tabId }: TabParams) =>
+    invokeCommand<ReadonlyArray<string> | null>('browser_tab_trail', { args: { tabId } }),
   clearProfile: ({ workspaceId }: WorkspaceParams) =>
     invokeCommand<BrowserProfileCleared>('browser_profile_clear', { args: { workspaceId } }),
   stop: ({ tabId }: TabParams) => invokeCommand<null>('browser_tab_stop', { args: { tabId } }),

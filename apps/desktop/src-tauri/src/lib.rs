@@ -798,6 +798,7 @@ pub fn run() {
             browser::commands::browser_tab_reload,
             browser::commands::browser_tab_reload_from_origin,
             browser::commands::browser_site_data_clear,
+            browser::commands::browser_tab_trail,
             browser::commands::browser_profile_clear,
             browser::commands::browser_tab_stop,
             browser::commands::browser_find,

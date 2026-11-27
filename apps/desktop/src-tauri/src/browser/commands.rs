@@ -78,6 +78,7 @@ pub(crate) struct TabArgs {
 pub(crate) struct SiteDataArgs {
     tab_id: String,
     host: String,
+    extra_hosts: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -303,10 +304,29 @@ pub async fn browser_site_data_clear(
     let tab = owned_tab(&webview, &args.tab_id)?;
     let live = web_url::live_url_of(&tab).ok_or_else(|| reason::failed(TAB_GONE))?;
     site_data::check_site(&live, &args.host, &AppOrigins::of_app(webview.app_handle()))?;
+    let trail = site_data::trail_of(
+        &webview.state::<BrowserRegistry>(),
+        &args.tab_id,
+        profile::isolation(),
+    );
+    let extra_hosts = site_data::check_trail(&trail, &args.host, &args.extra_hosts)?;
     let _lease = profile::begin_site_clear(webview.app_handle(), &args.tab_id)?;
-    let cleared = site_data::clear_site(&tab, &args.host).await?;
+    let cleared = site_data::clear_site(&tab, &args.host, extra_hosts).await?;
     host::reload_from_origin(&tab)?;
     Ok(cleared)
+}
+
+#[tauri::command]
+pub async fn browser_tab_trail(
+    webview: Webview,
+    args: TabArgs,
+) -> Result<Vec<String>, MessageError> {
+    check_owner(&webview, &args.tab_id)?;
+    Ok(site_data::trail_of(
+        &webview.state::<BrowserRegistry>(),
+        &args.tab_id,
+        profile::isolation(),
+    ))
 }
 
 #[tauri::command]
@@ -824,8 +844,29 @@ mod tests {
     fn wire_shape_site_data_args() {
         assert_wire_reads::<SiteDataArgs>(json!({
             "tabId": "0f1e",
-            "host": "localhost",
+            "host": "app.harborline.dev",
+            "extraHosts": ["login.cascadia-id.com"],
         }));
+    }
+
+    #[test]
+    fn site_data_checks_the_extra_hosts_against_the_tab_trail_before_the_lease() {
+        let command = include_str!("commands.rs");
+        let start = command
+            .find("pub async fn browser_site_data_clear")
+            .expect("the command");
+        let body = &command[start..start + command[start..].find("\n}\n").expect("end")];
+        let site = body.find("check_site(").expect("site");
+        let trail = body
+            .find("check_trail(&trail, &args.host, &args.extra_hosts)")
+            .expect("trail");
+        let leased = body.find("begin_site_clear(").expect("lease");
+        assert!(site < trail && trail < leased, "{body}");
+        let read = command
+            .find("pub async fn browser_tab_trail")
+            .expect("the read");
+        let read = &command[read..read + command[read..].find("\n}\n").expect("end")];
+        assert!(!read.contains("begin_"), "{read}");
     }
 
     #[test]
