@@ -32,7 +32,7 @@ import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useLaneStatus } from '../../hooks/useLaneStatus';
 import { LaneNotices } from './LaneNotices';
 import { useReviewCommentDrawerSlot } from '../../hooks/useReviewCommentDrawerSlot';
-import { openReviewComment } from '../../openReviewComment';
+import { useOpenReviewComment } from '../../hooks/useOpenReviewComment';
 import { reviewCommentDrawerSlot } from '../../reviewCommentDrawerSlot';
 import { ReviewCommentDrawer } from '../ReviewCommentDrawer';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
@@ -148,7 +148,7 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
   );
   const selectAllFixable = () => setReviewSelection({ sessionId, threadIds: shownFixableIds });
   const { source } = useActiveReviewSource({ sessionId, mountId });
-  const navigate = useAppStore((s) => s.navigate);
+  const openComment = useOpenReviewComment({ sessionId, mountId });
   const openDrawer = useAppStore((s) => s.openDrawer);
   const openThreadId = useAppStore((s) => {
     const open = selectOpenDrawer(s);
@@ -249,11 +249,11 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
       if (reviewTarget !== null) {
         consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
       }
-      openReviewComment({ navigate, sessionId, threadId });
+      openComment({ threadId });
       controller.resetFor(threadId);
       focusDrawer();
     },
-    [consumeReviewTarget, controller.resetFor, focusDrawer, navigate, reviewTarget, sessionId],
+    [consumeReviewTarget, controller.resetFor, focusDrawer, openComment, reviewTarget, sessionId],
   );
 
   const focusRow = useCallback(({ threadId }: FocusRowParams): void => {
@@ -266,11 +266,11 @@ export const ReviewFlow = ({ session, mountId = null, push }: Props) => {
 
   const closeComment = useCallback((): void => {
     const threadId = openThreadId;
-    openReviewComment({ navigate, sessionId, threadId: null });
+    openComment({ threadId: null });
     if (threadId !== null) {
       focusRow({ threadId });
     }
-  }, [focusRow, navigate, openThreadId, sessionId]);
+  }, [focusRow, openComment, openThreadId]);
 
   const step = useCallback(
     ({ delta }: StepParams): void => {

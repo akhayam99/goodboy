@@ -162,6 +162,39 @@ describe('a note and a host thread on one file', () => {
   });
 });
 
+describe('a host thread whose line left the diff', () => {
+  const GONE: DiffThread = {
+    ...HOST,
+    id: 'review:PRRT_gone',
+    anchor: { side: 'new', lineNumber: 99 },
+    body: 'This guard moved to the gateway.',
+    statusLabel: 'Open',
+  };
+
+  it('shows as outdated above the first line of its file', () => {
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([GONE])} />);
+
+    const card = hostCard();
+    within(card).getByText('Outdated');
+    const body = card.closest('[data-slot="diff-file-body"]');
+    expect(body?.firstElementChild?.contains(card)).toBe(true);
+  });
+
+  it('stays on its line while the line is still in the diff', () => {
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([HOST])} />);
+
+    expect(within(hostCard()).queryByText('Outdated')).toBeNull();
+  });
+
+  it('keeps Reply and Resolve on an outdated thread', () => {
+    renderWithMenu(<DiffView files={[FILE]} comments={commentsWith([GONE])} />);
+
+    const card = hostCard();
+    within(card).getByRole('button', { name: 'Reply' });
+    within(card).getByRole('button', { name: 'Resolve' });
+  });
+});
+
 describe('a host thread in Files', () => {
   it('posts a reply through the reply verb and closes its composer', async () => {
     const comments = commentsWith([HOST]);

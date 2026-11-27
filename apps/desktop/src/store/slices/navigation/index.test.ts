@@ -777,19 +777,19 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toEqual(ask);
   });
 
-  it('closes Ask when you leave its session, and Back brings it back', () => {
+  it('keeps a tool open when you leave its session, bound to where you land', () => {
     const store = makeStore();
     const ask: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'workflows' }) });
     store.getState().openDrawer(ask);
 
     store.getState().navigate({ to: sessionPlace({ sessionId: S2 }) });
-    expect(store.getState().drawer).toBeNull();
+    expect(store.getState().drawer).toEqual({ ...ask, sessionId: S2 });
     store.getState().back();
     expect(store.getState().drawer).toEqual(ask);
 
     store.getState().navigate({ to: BOARD_PLACE });
-    expect(store.getState().drawer).toBeNull();
+    expect(store.getState().drawer).toEqual({ ...ask, sessionId: null });
     store.getState().back();
     expect(store.getState().drawer).toEqual(ask);
   });
@@ -805,13 +805,13 @@ describe('navigation slice', () => {
     expect(store.getState().drawerBack).toBeNull();
   });
 
-  it('closes Ask from the chip when a forward move leaves its session', () => {
+  it('drops the reader and keeps the tool when a forward move leaves its session', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
     store.getState().openDrawer({ kind: 'scripts', sessionId: S1, payload: null });
     store.getState().openDrawer(DRAFTS);
     store.getState().navigate({ to: sessionPlace({ sessionId: S2 }) });
-    expect(store.getState().drawer).toBeNull();
+    expect(store.getState().drawer).toEqual({ kind: 'scripts', sessionId: S2, payload: null });
     expect(store.getState().drawerBack).toBeNull();
   });
 

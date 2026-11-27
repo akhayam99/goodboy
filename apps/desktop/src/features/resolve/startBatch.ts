@@ -59,6 +59,7 @@ export const startBatch = async ({
     state,
     sessionId,
     threadIds,
+    ...(mountId !== undefined && { mountId }),
     ...(comments !== undefined && { comments }),
   });
   onWrite?.();

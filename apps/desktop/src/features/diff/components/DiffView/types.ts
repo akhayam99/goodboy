@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { DiffCommentAnchor, FileDiff } from '@goodboy/types';
+import type { DiffCommentAnchor, FileDiff, SessionId } from '@goodboy/types';
 import type { Tone } from '@goodboy/ui';
 import type { ViewedState } from '../../lib/reviewedFiles';
 
@@ -16,6 +16,11 @@ type DiffThreadReply = {
   readonly id: string;
   readonly author: string;
   readonly body: string;
+};
+
+export type DiffThreadFixTarget = {
+  readonly sessionId: SessionId;
+  readonly threadId: string;
 };
 
 export type DiffThreadHost = 'github' | 'gitlab' | 'bitbucket';
@@ -38,6 +43,8 @@ export type DiffThread = {
   readonly createdAt: string;
   readonly statusLabel: string;
   readonly isResolved: boolean;
+  readonly isOutdated?: boolean;
+  readonly fixTarget?: DiffThreadFixTarget;
   readonly footer?: ReactNode;
   readonly canEdit: boolean;
   readonly canClose: boolean;

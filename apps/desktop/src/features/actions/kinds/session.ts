@@ -28,7 +28,7 @@ import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { lensPlace } from '../../../store/slices/navigation/canonicalLocation';
 import { SESSION_OPEN_ACTIVITY } from './sessionActivity';
-import { branchPlace } from '../../../store/slices/navigation/place';
+import { commentBranchPlaceOf } from '../../review/commentBranchPlaceOf';
 import { sessionTitle } from '../../../shared/utils/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { archiveConfirmOf } from '../../session/archiveConfirmOf';
@@ -159,7 +159,13 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     shortcut: 'lens.review',
     when: ({ facts }) => isUnarchived({ facts }) && !facts.isBranchless,
     run: ({ facts, env }) =>
-      env.getState().navigate({ to: branchPlace({ sessionId: facts.sessionId, tab: 'comments' }) }),
+      env.getState().navigate({
+        to: commentBranchPlaceOf({
+          state: env.getState(),
+          sessionId: facts.sessionId,
+          threadId: null,
+        }),
+      }),
   },
   {
     id: 'session.diff',

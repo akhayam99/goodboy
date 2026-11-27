@@ -31,9 +31,11 @@ import {
   type RunWaitState,
 } from '../../store/slices/session-view/runWaitEntriesOf';
 import { runAwaitsPlanReview } from '../plans/runAwaitsPlanReview';
+import { attentionThreadMountIdOf, type AttentionThreadState } from './attentionThreadMountIdOf';
 
 type State = AutoWaitState &
-  RunWaitState & {
+  RunWaitState &
+  AttentionThreadState & {
     readonly sessions: ReadonlyArray<Session>;
     readonly sessionPhaseRuns: Readonly<Record<string, ReadonlyArray<Agent>>>;
     readonly sessionOpenQuestions?: Readonly<Record<string, ReadonlyArray<OpenQuestion>>>;
@@ -96,7 +98,10 @@ export const attentionPlace = ({
   subject,
   questionId = null,
 }: Params): PlaceRequest => {
-  const mountPath = mountPathOf({ state, sessionId, mountId });
+  const threadMountId =
+    mountId ??
+    (reason === null ? null : attentionThreadMountIdOf({ state, sessionId, reason, subject }));
+  const mountPath = mountPathOf({ state, sessionId, mountId: threadMountId });
   const runWait = reason === null ? undefined : RUN_WAIT_BY_REASON[reason];
   if (runWait !== undefined) {
     const session = sessionById(state.sessions, sessionId);

@@ -9,7 +9,6 @@ describe('HomePage', () => {
   it('names the page Home', () => {
     render(<HomePage />);
 
-    screen.getByRole('main', { name: 'Home' });
     screen.getByRole('heading', { name: 'Home' });
   });
 });

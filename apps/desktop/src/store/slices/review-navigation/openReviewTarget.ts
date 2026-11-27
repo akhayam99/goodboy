@@ -2,6 +2,7 @@ import { formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { selectActiveMountId, selectMountById } from '../project-mounts/selectors';
 import { branchPlace } from '../navigation/place';
+import { threadMountIdOf } from '../review-source/threadMountIdOf';
 import { noteLandingPlace } from './noteLandingPlace';
 import { setPullRequestMode } from './setPullRequestMode';
 import {
@@ -65,12 +66,23 @@ export const openReviewTarget = async ({
     return unavailable('no_session');
   }
   const requestId = crypto.randomUUID();
-  const requestedMountId = reviewMountId({ destination });
+  const firstThreadId = reviewThreadIds({ destination })[0] ?? null;
+  const requestedMountId =
+    reviewMountId({ destination }) ??
+    (firstThreadId === null
+      ? null
+      : threadMountIdOf({
+          state: get(),
+          sessionId,
+          threadId: firstThreadId,
+          prNumber: reviewPrNumber({ destination }),
+        }));
   const mountPath =
     requestedMountId === null
       ? null
       : (selectMountById({ state: get(), sessionId, mountId: requestedMountId })?.worktreePath ??
         null);
+  const fallbackMountId = requestedMountId ?? selectActiveMountId({ state: get(), sessionId });
   if (isNotesDestination({ destination })) {
     if (requestedMountId !== null) {
       try {
@@ -157,7 +169,7 @@ export const openReviewTarget = async ({
   if (prNumber === null) {
     return settle({ kind: 'opened' });
   }
-  const mountId = requestedMountId ?? selectActiveMountId({ state: get(), sessionId });
+  const mountId = fallbackMountId;
   if (mountId === null) {
     return release('no_mount');
   }
