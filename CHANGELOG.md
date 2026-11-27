@@ -14,49 +14,49 @@ onto its own paragraph.
 
 ## Goodboy v0.44.0
 
-Your iPhone finds your Mac again and needs pairing again if you go back a version, with newer models on every provider and the Lead's cost in each run.
+The iPhone finds your Mac again, the Lead's cost shows in each run, and the bell stops repeating itself.
 
 ### Improved
 
 #### Lead cost and share of a run
 <!-- gb area=agents pr=2429,2439 -->
 
-A Lead that started agents shows **Lead** for its own conversation and **Run total** for the whole run, with **Lead share** beside them. On a run over $0.50, a Lead above 25% reads **Lead used 41% of this run** in the warning color. In the Limit popover, **Spent** reads **Counted to limit**.
+Each run shows the Lead's own cost beside the run total, and warns when the Lead takes too big a share.
 
 #### Select an element on the Browser page
 <!-- gb area=app pr=2437 -->
 
-The Browser page has Select an element, and ⌘⇧C turns it on. Note what should change and Add puts the element and your note in the message box of the shown tab's session, ready for you to send. The Browser row also has one control per action.
+Select an element on a Browser page (⌘⇧C) and add it, with a note, to the session's message box.
 
 #### Models your account cannot run are skipped
 <!-- gb area=providers pr=2430 -->
 
-Goodboy remembers which models an account cannot run and sends work to the next model on the same provider. The agent's why line says so, and Cursor's Check again learns the models your account lists.
+Models your account can't run are skipped, and the work moves to the next model of the same provider.
 
 #### Newer models on every provider
 <!-- gb area=providers pr=2440 -->
 
-Gemini 4 Neon, Carbon and Hydrogen, GPT-6.2 Sol and Astra, GPT-6.1 Terra, Fable 5.2, Kimi K3.1 Pro and DeepSeek V4.1 Flash join the pickers of the providers that offer them, with their prices. A saved pick of Gemini 3.8 Flash moves to Hydrogen.
+The latest Gemini, GPT, Fable, Kimi and DeepSeek models join the pickers.
 
 #### The iPhone finds your Mac again
 <!-- gb area=settings pr=2435 -->
 
-The iPhone finds your Mac again after a restart, and pairing shows a code to check on both screens. A new phone waits for Allow or Deny on the iPhone page, and Reset pairing starts again.
+The iPhone finds your Mac again after a restart, and pairing shows a code to check on both screens. Going back to 0.43 means pairing the iPhone again.
 
 #### Show the sites that keep data in the Browser
 <!-- gb area=app pr=2451 -->
 
-On macOS 14 or later, Show site data in the browser page menu lists every site that keeps data in the workspace and what it keeps, and clears the ones you pick.
+Show site data lists the sites that keep data in the Browser and clears the ones you pick (macOS 14 or later).
 
 #### Board lanes named by what they hold
 <!-- gb area=sessions image=board-lanes pr=2432 -->
 
-The board lanes read Open, Running, In review, Done and Archive, in the board, the session lists, the Sessions popover and the Guide.
+Board lanes read Open, Running, In review, Done and Archive.
 
 #### Floating drag targets in the dock
 <!-- gb area=app pr=2428 -->
 
-Dragging a dock panel shows one small label per place: Place left, Place right, Place above, Place below and Merge. The page no longer dims while you drag.
+Dragging a dock panel shows one small floating label per place.
 
 ### Fixed
 
