@@ -3,15 +3,12 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { openPlanDrawer } from '../../../../plans/openPlanDrawer';
 import { useAppStore } from '../../../../../store';
 import { agentHomeFor } from '../../../../../store/slices/navigation/agentHomeFor';
-import {
-  agentPlace,
-  branchPlace,
-  sessionPlace,
-} from '../../../../../store/slices/navigation/place';
+import { agentPlace, sessionPlace } from '../../../../../store/slices/navigation/place';
 import { resolverThread } from '../../../../../store/slices/navigation/resolverThread';
 import type { PlaceRequest } from '../../../../../store/slices/navigation/types';
 import { focusQuestionAnswer } from '../../../../context/focusQuestionAnswer';
 import { noteIdOfThread } from '../../../../resolve/notes/noteThread';
+import { commentBranchPlaceOf } from '../../../../review/commentBranchPlaceOf';
 import type { AskHandle } from '../../askHandles';
 
 type Params = {
@@ -28,9 +25,9 @@ const agentChipPlace = ({ sessionId, agentId }: AgentChipParams): PlaceRequest =
   if (agentHomeFor({ state, sessionId, agentId }) !== 'review') {
     return agentPlace({ sessionId, agentId });
   }
-  return branchPlace({
+  return commentBranchPlaceOf({
+    state,
     sessionId,
-    tab: 'comments',
     threadId: resolverThread({ state, sessionId, agentId }),
   });
 };
@@ -64,15 +61,29 @@ export const useAskChipOpen = ({ sessionId }: Params) =>
             });
             return;
           }
-          navigate({ to: branchPlace({ sessionId, tab: 'comments', threadId: target.threadId }) });
+          navigate({
+            to: commentBranchPlaceOf({
+              state: useAppStore.getState(),
+              sessionId,
+              threadId: target.threadId,
+            }),
+          });
           return;
         case 'pr':
-          navigate({ to: branchPlace({ sessionId, tab: 'comments' }) });
+          navigate({
+            to: commentBranchPlaceOf({
+              state: useAppStore.getState(),
+              sessionId,
+              threadId: null,
+            }),
+          });
           return;
         case 'file':
           navigate({
-            to: branchPlace({
+            to: commentBranchPlaceOf({
+              state: useAppStore.getState(),
               sessionId,
+              threadId: null,
               tab: 'files',
               focus: { kind: 'branch', path: target.path },
             }),

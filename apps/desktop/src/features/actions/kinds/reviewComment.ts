@@ -33,9 +33,9 @@ import {
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { hostIconOf } from '../../../shared/components/hostIconOf';
 import { openWebAction } from '../openWebAction';
-import { branchPlace, fixRunTranscript } from '../../../store/slices/navigation/place';
+import { fixRunTranscript } from '../../../store/slices/navigation/place';
 import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
-import { diffThreadIdOf } from '../../diff/lib/threadIds';
+import { commentDiffPlaceOf } from '../../review/commentDiffPlaceOf';
 import { acceptReviewItem } from '../../resolve/acceptReviewItem';
 import { acceptUpToLabel } from '../../resolve/laneCopy';
 import { FAILED_RUN_COPY } from '../../resolve/failedRunCopy';
@@ -217,15 +217,11 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       slot: () => 'menu',
       run: ({ facts, env }) =>
         env.getState().navigate({
-          to: branchPlace({
+          to: commentDiffPlaceOf({
+            state: env.getState(),
             sessionId: facts.sessionId,
-            tab: 'files',
             threadId: facts.threadId,
-            focus: {
-              kind: 'branch',
-              path: facts.path ?? '',
-              threadId: diffThreadIdOf({ threadId: facts.threadId }),
-            },
+            path: facts.path ?? '',
           }),
         }),
     },
