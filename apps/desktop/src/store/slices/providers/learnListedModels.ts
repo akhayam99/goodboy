@@ -1,7 +1,7 @@
 import { catalogModelForId, MODEL_CATALOGS } from '@goodboy/core/providers';
 import type { ModelKey, ProviderId } from '@goodboy/types';
 import { isSameUnavailableModel } from './isSameUnavailableModel';
-import type { UnavailableModel } from './unavailableModelsSetting';
+import { UNAVAILABLE_MODEL_TTL_MS, type UnavailableModel } from './unavailableModelsSetting';
 import type { UnavailableModelsWrite } from './unavailableModelsWriter';
 
 type Params = {
@@ -14,6 +14,10 @@ type ListedModels = {
   readonly plan: string | null;
   readonly listed: ReadonlyArray<string>;
   readonly checkedAt: number;
+};
+
+type EntryParams = {
+  readonly entry: UnavailableModel;
 };
 
 type KeysParams = Pick<ListedModels, 'providerId' | 'listed'>;
@@ -41,13 +45,19 @@ export const learnListedModels = ({ write }: Params) => {
     const unlisted = MODEL_CATALOGS[providerId]
       .map((model) => model.key)
       .filter((modelKey) => !listedKeys.has(modelKey));
+    const unlistedKeys = new Set(unlisted);
+    const isStillRefused = ({ entry }: EntryParams): boolean =>
+      entry.source === 'refused' &&
+      (entry.plan === null || plan === null || entry.plan === plan) &&
+      checkedAt - entry.checkedAt < UNAVAILABLE_MODEL_TTL_MS;
     await write({
       change: ({ current }) => {
         const kept = current.filter(
           (entry) =>
-            entry.source !== 'unlisted' ||
             entry.providerId !== providerId ||
-            entry.accountId !== accountId,
+            entry.accountId !== accountId ||
+            (entry.source !== 'unlisted' &&
+              (!unlistedKeys.has(entry.modelKey) || isStillRefused({ entry }))),
         );
         const learned = unlisted.flatMap((modelKey): ReadonlyArray<UnavailableModel> => {
           const model = { providerId, accountId, modelKey };

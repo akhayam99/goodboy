@@ -188,6 +188,49 @@ describe('the models a Cursor account lists', () => {
     expect(store.getState().unavailableModels).toEqual([]);
   });
 
+  it('learns an unlisted model over a refusal that has expired', async () => {
+    store.setState({
+      unavailableModels: [
+        {
+          providerId: 'cursor',
+          accountId: ACCOUNT,
+          modelKey: OPUS,
+          plan: null,
+          source: 'refused',
+          checkedAt: Date.now() - 8 * 24 * 60 * 60 * 1000,
+        },
+      ],
+    });
+    stubStoryInvoke({
+      provider_test_connection: answered({ models: ['claude-sonnet-5-5-high'] }),
+    });
+
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
+
+    expect(unlistedKeys()).toContain(OPUS);
+    expect(
+      store.getState().unavailableModels.filter((entry) => entry.modelKey === OPUS),
+    ).toHaveLength(1);
+  });
+
+  it('drops a list that arrives after the plan changed', async () => {
+    store.setState({
+      authResults: { cursor: { state: 'connected', identity: ACCOUNT, plan: 'pro' } },
+    });
+    stubStoryInvoke({
+      provider_test_connection: () => {
+        store.setState({
+          authResults: { cursor: { state: 'connected', identity: ACCOUNT, plan: 'ultra' } },
+        });
+        return answered({ models: ['claude-sonnet-5-5-high'] });
+      },
+    });
+
+    await store.getState().testProviderConnection({ providerId: 'cursor' });
+
+    expect(store.getState().unavailableModels).toEqual([]);
+  });
+
   it('drops a list that arrives after the account changed', async () => {
     stubStoryInvoke({
       provider_test_connection: () => {

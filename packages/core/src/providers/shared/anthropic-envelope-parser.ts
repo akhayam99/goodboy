@@ -63,11 +63,14 @@ type ResultEndParams = {
   readonly at: IsoDateTime;
 };
 
+const RESULT_ERROR_FALLBACK = 'The run ended with an error and no message.';
+
 const resultEndOf = ({ payload, runId, at }: ResultEndParams): TurnEvent => {
   const errorText = typeof payload.error === 'string' ? payload.error : null;
   const resultText = typeof payload.result === 'string' ? payload.result.trim() : '';
-  if (payload.is_error === true && (errorText !== null || resultText !== '')) {
-    return { kind: 'error', runId, message: errorText ?? resultText, at };
+  if (payload.is_error === true) {
+    const message = errorText ?? (resultText === '' ? RESULT_ERROR_FALLBACK : resultText);
+    return { kind: 'error', runId, message, at };
   }
   if (payload.subtype !== 'success' && errorText !== null) {
     return { kind: 'error', runId, message: errorText, at };

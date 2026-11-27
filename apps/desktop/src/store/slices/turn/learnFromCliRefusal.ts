@@ -1,13 +1,13 @@
 import { catalogModelForId } from '@goodboy/core/providers';
 import type { ProviderId } from '@goodboy/types';
 import { classifyProviderError } from '../../../features/chat/classifyProviderError';
-import { accountPlanOf } from '../providers/accountPlanOf';
 import type { GetFn } from './types';
 
 type Params = {
   readonly get: GetFn;
   readonly providerId: ProviderId;
   readonly accountId: string;
+  readonly plan: string | null;
   readonly model: string;
   readonly message: string;
   readonly nowMs?: number;
@@ -17,6 +17,7 @@ export const learnFromCliRefusal = ({
   get,
   providerId,
   accountId,
+  plan,
   model,
   message,
   nowMs = Date.now(),
@@ -37,7 +38,7 @@ export const learnFromCliRefusal = ({
         providerId,
         accountId,
         modelKey,
-        plan: accountPlanOf({ state: get(), providerId }),
+        plan,
         source: 'refused',
         checkedAt: nowMs,
       })

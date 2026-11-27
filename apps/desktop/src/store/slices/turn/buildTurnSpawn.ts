@@ -31,6 +31,7 @@ import { snapshotMountChanges } from './snapshotMountChanges';
 import type { GetFn, SetFn, TurnLease, TurnProgress, WithInput } from './types';
 import { projectById } from '../projects/projectIndex';
 import { accountIdOf } from '../providers/accountIdOf';
+import { accountPlanOf } from '../providers/accountPlanOf';
 import type { PreparedTurn } from './prepareTurn';
 import type { RoutedTurn } from './routeTurn';
 import type { LeasedTurn } from './leaseTurnWriter';
@@ -123,6 +124,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     receivedStreamError: false,
     lastError: null,
     accountId: accountIdOf({ providers: get().providers, providerId: provider }),
+    plan: accountPlanOf({ state: get(), providerId: provider }),
     streamFailure: null,
     failureReason: null,
     turnWasCancelled: false,

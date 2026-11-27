@@ -309,6 +309,14 @@ describe('a result the cli marks as an error', () => {
     ]);
   });
 
+  it('ends the turn with an error when the error flag has no text', () => {
+    const { feed } = makeFeed();
+    const events = feed({ type: 'result', subtype: 'success', is_error: true, result: '' });
+
+    expect(events.map((event) => event.kind)).toEqual(['error']);
+    expect(events[0]).toMatchObject({ message: expect.stringMatching(/\S/) });
+  });
+
   it('keeps a result that is not marked as an error done', () => {
     const { feed } = makeFeed();
     const events = feed({ type: 'result', subtype: 'success', is_error: false, result: 'Done.' });

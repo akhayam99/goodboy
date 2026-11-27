@@ -84,6 +84,7 @@ export type RoutingOutcome =
       kind: 'blocked';
       code: 'no_provider' | 'provider_unproven';
       message: string;
+      cause?: CandidateCause | null;
     }>;
 
 type LoadMountsParams = Readonly<{

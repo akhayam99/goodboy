@@ -75,6 +75,7 @@ describe('a provider that refuses a model for this account', () => {
       get: useAppStore.getState,
       providerId: 'codex',
       accountId: ACCOUNT,
+      plan: null,
       model: 'gpt-6.1-sol',
       message,
       nowMs: NOW,
@@ -113,17 +114,18 @@ describe('a provider that refuses a model for this account', () => {
       'Claude Opus is not available with the Claude Pro plan. If you have updated your subscription plan recently, run /logout and /login for the plan to take effect.',
     ],
   ] as const)(
-    'remembers a %s refusal with the plan the account is on',
+    'remembers a %s refusal with the plan the run started on',
     async (providerId, model, modelKey, message) => {
       useAppStore.setState({
         providers: [{ ...codex, id: providerId, label: 'Claude', binary: 'claude' }],
-        authResults: { [providerId]: { state: 'connected', identity: ACCOUNT, plan: 'pro' } },
+        authResults: { [providerId]: { state: 'connected', identity: ACCOUNT, plan: 'max' } },
       });
 
       learnFromCliRefusal({
         get: useAppStore.getState,
         providerId,
         accountId: ACCOUNT,
+        plan: 'Pro',
         model,
         message,
         nowMs: NOW,
@@ -184,6 +186,7 @@ describe('a provider that refuses a model for this account', () => {
       get: useAppStore.getState,
       providerId: 'codex',
       accountId: ACCOUNT,
+      plan: null,
       model: 'gpt-6.1-sol',
       message: 'connection reset by peer',
     });

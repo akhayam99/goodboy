@@ -317,7 +317,7 @@ const resolvePicked = ({ request, list, parsed, scope }: PickedParams): RoutingO
       ? checkLeadPick({ list, parsed })
       : { checked: invalidPick({ list }), isEffortDropped: false };
   if (checked.kind === 'refused') {
-    return scope.refusal();
+    return { ...scope.refusal(), cause: checked.cause };
   }
   if (checked.kind === 'kept') {
     const reason =

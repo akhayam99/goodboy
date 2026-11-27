@@ -131,6 +131,7 @@ export const recoverTurnFailure = async ({ set, get, lease, ctx, err, runOnce }:
       get,
       providerId: provider,
       accountId: progress.accountId,
+      plan: progress.plan,
       model: spawnModel,
       message: rawMessage,
     });

@@ -48,6 +48,7 @@ export const testProviderConnection =
       isAutomatic: false,
       run: async () => {
         const accountId = accountIdOf({ providers: get().providers, providerId });
+        const plan = accountPlanOf({ state: get(), providerId });
         let result: ConnectionTestResult;
         let listed: ReadonlyArray<string> = [];
         try {
@@ -121,7 +122,8 @@ export const testProviderConnection =
         const current = get();
         if (
           !result.isOk ||
-          accountId !== accountIdOf({ providers: current.providers, providerId })
+          accountId !== accountIdOf({ providers: current.providers, providerId }) ||
+          plan !== accountPlanOf({ state: current, providerId })
         ) {
           return;
         }
@@ -129,7 +131,7 @@ export const testProviderConnection =
           .learnListedModels({
             providerId,
             accountId,
-            plan: accountPlanOf({ state: current, providerId }),
+            plan,
             listed,
             checkedAt: at,
           })
