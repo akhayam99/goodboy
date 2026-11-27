@@ -185,6 +185,19 @@ that does not parse.
 - `mount_ambiguous` and `mount_missing` are asked instead
   ([projects.md](projects.md#the-project-ask)).
 
+### A command for a role without a shell
+
+`resolveDelegateChild` checks each child's brief with `autoShellRefusalOf`
+before any agent exists. A read-only role whose task, done-when or expected
+output asks for a command is refused `role_lacks_shell`: the batch writes no
+delegation and starts no helper. The refusal row settles with the Lead's own
+turn and goes out as the next message, a waiting tree included
+(`chooseDeliveryRows`), so the Lead picks again without waiting for a result.
+It names the role, the matched phrase and the roles that run commands
+(`AUTO_COMMAND_ROLES`). The same module writes the routing rule of the prompt
+(`autoShellRule`), so both name the same roles
+([roles.md](roles.md#read-only-roles-and-commands)).
+
 ## The delivery text
 
 A full delivery starts with a digest of the tree: open agents with role, state

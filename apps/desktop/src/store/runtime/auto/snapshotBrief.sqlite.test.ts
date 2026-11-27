@@ -69,7 +69,12 @@ const delegationsOf = (made: RuntimeWorld) =>
 
 const failFirstChild = async (made: RuntimeWorld): Promise<void> => {
   await autoTurnEnds({ world: made });
-  await childTurnEnds({ world: made, index: 0, text: 'I could not finish this.' });
+  await childTurnEnds({
+    world: made,
+    index: 0,
+    text: 'I could not finish this.',
+    overrides: { exit: 'error' },
+  });
 };
 
 const retryOf = async (made: RuntimeWorld, id: string | undefined) =>
