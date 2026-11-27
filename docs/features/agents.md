@@ -390,6 +390,7 @@ The plan waits in the dock joined to the message field with **Approve and start 
 - The smallest limit pauses the Lead. A session limit under the Lead's own lowers it, and the chip says which one wins.
 - An agent's page, a run's page and a Lead page have the same one line under their title: the state, one sentence, what that agent spent and its settings. A Lead reads "Stops after the plan · Ask first · Limit $10.00", an agent "Ask first · No limit". Each word opens one choice, and its tooltip says what it changes.
 - A Lead that started agents shows two amounts there. **Lead** is what its own conversation cost. **Run total** adds every agent under it.
+- Next to the total, **Lead share 18%** says how much of the run the Lead itself cost. On a run over $0.50, a share above 25% reads **Lead used 41% of this run** in the warning color.
 - The **Limit** popover shows **Counted to limit**, the amount the limit is checked against. It can differ from **Run total**.
 - The model is picked in the message box, beside **Send**.
 - A Lead page shows **Asks you** in that line, which opens its permission rows. It starts on the workspace default, a pick changes this Lead only, and it applies to what the Lead starts next. An agent already waiting for your go keeps waiting.
