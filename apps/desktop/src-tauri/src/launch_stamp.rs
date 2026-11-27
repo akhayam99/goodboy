@@ -1,4 +1,4 @@
-use crate::util::time::now_millis_u64;
+use crate::util::now_millis_u64;
 use std::sync::OnceLock;
 
 static LAUNCHED_AT_MS: OnceLock<u64> = OnceLock::new();
