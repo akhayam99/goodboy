@@ -17,10 +17,6 @@ import {
 
 const STORED_DOCK_GRID_VERSION = 2;
 
-export const DOCK_GRID_V1_READ_UNTIL = '0.45.0';
-
-const READABLE_VERSIONS: ReadonlyArray<number> = [1, STORED_DOCK_GRID_VERSION];
-
 const TOOL_KINDS = WORKSPACE_TOOL_KINDS;
 
 type GridParams = {
@@ -44,9 +40,6 @@ type EntryParams = {
 type KindsParams = ValueParams & {
   readonly kinds: ReadonlyArray<DrawerContent['kind']>;
 };
-
-const isReadableVersion = ({ value }: ValueParams): boolean =>
-  READABLE_VERSIONS.some((version) => version === value);
 
 const toolKindOf = ({ value }: ValueParams): WorkspaceToolKind | null =>
   TOOL_KINDS.find((kind) => kind === value) ?? null;
@@ -233,7 +226,7 @@ export const parseStoredDockGrid = ({ raw }: RawParams): DrawerGrid | null => {
   } catch {
     value = null;
   }
-  if (!isRecord(value) || !isReadableVersion({ value: value.version })) {
+  if (!isRecord(value) || value.version !== STORED_DOCK_GRID_VERSION) {
     return null;
   }
   const columns = columnsOf({ value: value.columns });

@@ -1,9 +1,7 @@
 import { storedUserOriginOf, storedUserTextOf, type UserOrigin } from '@goodboy/core/auto';
-import { legacyNoteTextOf } from './legacyNoteTextOf';
 
 type Params = {
   readonly payload: unknown;
-  readonly text: string;
 };
 
 type OriginParams = {
@@ -29,13 +27,10 @@ const textOfOrigin = ({ origin, userText }: OriginParams): string | null => {
   }
 };
 
-export const noteTextOf = ({ payload, text }: Params): string | null => {
+export const noteTextOf = ({ payload }: Params): string | null => {
   const origin = storedUserOriginOf({ value: payload });
-  if (origin === 'unknown') {
+  if (origin === 'unknown' || origin === null) {
     return null;
-  }
-  if (origin === null) {
-    return legacyNoteTextOf({ text });
   }
   return textOfOrigin({ origin, userText: storedUserTextOf({ value: payload }) });
 };

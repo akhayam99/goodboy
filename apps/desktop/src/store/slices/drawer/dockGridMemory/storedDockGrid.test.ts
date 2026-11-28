@@ -82,26 +82,6 @@ describe('the dock grid as the session stores it', () => {
     expect(parseStoredDockGrid({ raw: storedDockGridOf({ grid }) })?.columns).toEqual(grid.columns);
   });
 
-  it('still reads a row saved before Scripts and Ask joined the grid', () => {
-    const parsed = parseStoredDockGrid({
-      raw: raw({
-        value: {
-          version: 1,
-          columns: [
-            [{ kind: 'browser', sessionId: null, payload: null }],
-            [{ kind: 'monitoring', sessionId: null, payload: null }],
-          ],
-          used: ['browser', 'monitoring'],
-          focus: { at: 'tool', kind: 'monitoring' },
-          widths: { browser: 700 },
-        },
-      }),
-    });
-
-    expect(parsed?.columns.flat().map((panel) => panel.kind)).toEqual(['browser', 'monitoring']);
-    expect(parsed?.widths).toEqual({ browser: 700 });
-  });
-
   it('writes no face and no detail, and still reads a row an older build saved with them', () => {
     expect(JSON.parse(storedDockGridOf({ grid: GRID }))).not.toHaveProperty('face');
     const older = JSON.stringify({ ...JSON.parse(storedDockGridOf({ grid: GRID })), face: 'desk' });
@@ -113,6 +93,12 @@ describe('the dock grid as the session stores it', () => {
     ['text that is not JSON', 'terminal'],
     ['a version it does not know', raw({ value: { version: 3, columns: [] } })],
     [
+      'a version 1 row, which is no longer read',
+      raw({
+        value: { version: 1, columns: [[{ kind: 'browser', sessionId: null, payload: null }]] },
+      }),
+    ],
+    [
       'a panel that is not a tool',
       raw({ value: { version: 2, columns: [[{ kind: 'conversation' }]] } }),
     ],
@@ -122,13 +108,13 @@ describe('the dock grid as the session stores it', () => {
     ],
     [
       'a Terminal without its tab',
-      raw({ value: { version: 1, columns: [[{ kind: 'terminal', sessionId: null }]] } }),
+      raw({ value: { version: 2, columns: [[{ kind: 'terminal', sessionId: null }]] } }),
     ],
     [
       'the same tool twice',
       raw({
         value: {
-          version: 1,
+          version: 2,
           columns: [
             [{ kind: 'browser', sessionId: null, payload: null }],
             [{ kind: 'browser', sessionId: null, payload: null }],
@@ -140,7 +126,7 @@ describe('the dock grid as the session stores it', () => {
       'three columns',
       raw({
         value: {
-          version: 1,
+          version: 2,
           columns: [[], [], []],
         },
       }),
@@ -153,7 +139,7 @@ describe('the dock grid as the session stores it', () => {
     const parsed = parseStoredDockGrid({
       raw: raw({
         value: {
-          version: 1,
+          version: 2,
           columns: [[{ kind: 'browser', sessionId: null, payload: null }]],
           used: ['conversation', 'browser', 'browser'],
           focus: { at: 'tool', kind: 'terminal' },
@@ -187,7 +173,7 @@ describe('the dock grid as the session stores it', () => {
     const parsed = parseStoredDockGrid({
       raw: raw({
         value: {
-          version: 1,
+          version: 2,
           columns: [[{ kind: 'browser', sessionId: null, payload: null }]],
           splits: {
             'browser/terminal': 0.3,

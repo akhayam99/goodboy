@@ -61,14 +61,19 @@ stops reading the old one. `legacy-state-sunset.test.ts` fails when the
 running version reaches that release while the row is still listed: remove the
 read in the code, then delete the row.
 
-| State                                              | Old shape                               | New shape written since | Old shape read until (excluded) |
-| -------------------------------------------------- | --------------------------------------- | ----------------------- | ------------------------------- |
-| Companion pairing file `~/.goodboy/companion.json` | `allow_list`, a bare list of phone keys | 0.43.0                  | 0.45.0                          |
-| Stored session dock grid                           | version 1 row, three tools              | 0.43.0                  | 0.45.0                          |
-| Lead `user` outbox row with no `origin`            | text only, no `origin` and `userText`   | 0.43.1                  | 0.45.0                          |
+| State | Old shape | New shape written since | Old shape read until (excluded) |
+| ----- | --------- | ----------------------- | ------------------------------- |
 
 Gone already, listed because their rows or keys stay behind:
 
+- The companion pairing file `~/.goodboy/companion.json` no longer reads the bare
+  `allow_list` of phone keys since 0.45.0. A file that still holds one lists no
+  paired phone, and each iPhone pairs again.
+- A stored session dock grid of version 1 (three tools, written until 0.43.0) is
+  not read since 0.45.0. That session opens with the default layout, and the row
+  stays in the database.
+- A Lead `user` outbox row with no `origin` (written until 0.43.1) shows no note
+  since 0.45.0. The row stays in the database.
 - The settings `runs.defaultShape.<workspaceId>` and
   `runs.defaultShape.session.<sessionId>` (Start as in Run defaults, written
   until 0.39.0) are not read since 0.41.0. A saved `lead` or `plan` no longer

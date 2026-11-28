@@ -73,10 +73,7 @@ trimmed `userText` of an `operator` row, or of a `permission` row that carries a
 denial reason. Every other origin, an unknown one and an empty text are no note.
 The tree and the queued rows show the note text, never `payload.text`.
 
-A row written before 0.43.1 has no origin. `legacyNoteTextOf` reads it: whole
-known system lines are no note, leading permission lines are cut, and the words
-after them stay. It is read until 0.45.0 (`USER_ORIGIN_LEGACY_READ_UNTIL`, the
-row in `docs/versioning.md`), then removed with its test.
+A row written before 0.43.1 has no origin and shows no note.
 
 ## One queue
 

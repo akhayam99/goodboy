@@ -110,35 +110,13 @@ describe('readMessagesOf', () => {
     );
   });
 
-  it('classifies a row written before origin existed', () => {
+  it('shows no note for a row written before origin existed', () => {
     const rows = [
       rowOf({ id: 'old-note', text: 'Denied Read. keep the export as it is', createdAt: 100 }),
-      rowOf({
-        id: 'old-allow',
-        text: 'Permission for that exact command is granted for this one call. Continue where you stopped.',
-      }),
-      rowOf({
-        id: 'old-continue',
-        text: 'Continue the Reviewer that stopped (delegation d2) from where it left off: review payments-api',
-      }),
-      rowOf({ id: 'old-marker', text: '<<oq-answers>>\nQ: scope\nA: all\n<</oq-answers>>' }),
       rowOf({ id: 'old-plain', text: 'Also cover the batch endpoint', createdAt: 120 }),
     ];
 
-    expect(readOf(rows).map((message) => [message.rowId, message.text])).toEqual([
-      ['old-note', 'keep the export as it is'],
-      ['old-plain', 'Also cover the batch endpoint'],
-    ]);
-  });
-
-  it('keeps a human sentence that only starts like a system line', () => {
-    const rows = [
-      rowOf({ id: 'old-human', text: 'Permission for the rollout is on me, continue.' }),
-    ];
-
-    expect(readOf(rows).map((message) => message.text)).toEqual([
-      'Permission for the rollout is on me, continue.',
-    ]);
+    expect(readOf(rows)).toEqual([]);
   });
 
   it('keeps two Leads apart by generation', () => {
