@@ -186,7 +186,12 @@ export { checkPick, type CheckedPick } from './candidates/checkPick';
 
 export { CANDIDATES_BLOCK_BUDGET, formatCandidatesBlock } from './candidates/formatCandidatesBlock';
 
-export { CANDIDATE_CAUSES, type CandidateCause } from './candidates/candidateCauses';
+export {
+  CANDIDATE_CAUSES,
+  candidateCauseTextOf,
+  candidateOrderFactOf,
+  type CandidateCause,
+} from './candidates/candidateCauses';
 
 export { modelFamily, type ModelFamily } from './candidates/modelFamily';
 

@@ -375,7 +375,9 @@ describe('the Lead picks each helper from the candidates', () => {
 
     expect(outcome).toMatchObject({ provider: 'anthropic', source: 'fallback', cause: 'writer' });
     expect(outcome.reason).toContain('The Lead asked for Cursor');
-    expect(outcome.reason).toContain('agents that write code do not run here yet');
+    expect(outcome.reason).toContain(
+      'the Lead cannot stop Cursor from pushing on its own yet, so it gives Cursor only read-only jobs',
+    );
     expect(outcome.reason).toContain('Claude: first in your order');
   });
 

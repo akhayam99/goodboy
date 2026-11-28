@@ -4,7 +4,8 @@ import { isAutoRoleStartable, parseAutoDelegationRole } from '@goodboy/core/auto
 import {
   bestCandidate,
   buildCandidates,
-  CANDIDATE_CAUSES,
+  candidateCauseTextOf,
+  candidateOrderFactOf,
   type Candidate,
   type CandidateInputs,
   type CandidateScope,
@@ -38,6 +39,7 @@ const candidateScopeOf = ({ role }: ScopeParams): CandidateScope => {
 type RowParams = {
   readonly row: Candidate;
   readonly inputs: CandidateInputs;
+  readonly isFirstOfProvider: boolean;
 };
 
 type ModelParams = {
@@ -61,12 +63,14 @@ const modelTextOf = ({ row }: ModelParams): string => {
   return [routingNameText(label), ...label.detail].join(' · ');
 };
 
-const factsOf = ({ row, inputs }: RowParams): string => {
+const factsOf = ({ row, inputs, isFirstOfProvider }: RowParams): string => {
   if (row.cause !== null) {
-    return CANDIDATE_CAUSES[row.cause].text;
+    return candidateCauseTextOf({ cause: row.cause, providerName: PROVIDER_LABEL[row.provider] });
   }
   return [
-    `#${row.order} in your order`,
+    ...(isFirstOfProvider
+      ? [candidateOrderFactOf({ providerName: PROVIDER_LABEL[row.provider], order: row.order })]
+      : []),
     roomTextOf({ provider: row.provider, inputs }),
     `${row.load} ${row.load === 1 ? 'agent' : 'agents'} in the last hour`,
     ...(row.isLighter ? ['lighter model'] : []),
@@ -102,7 +106,7 @@ export const RoleCandidates = ({ workspaceId, role, label }: Props) => {
     >
       <Eyebrow label={`Candidates for ${label} right now`} />
       <ul className="flex flex-col gap-1">
-        {list.rows.map((row) => {
+        {list.rows.map((row, index) => {
           const mark = candidateMarkOf({ row, best });
           const isOut = mark === 'out';
           return (
@@ -126,7 +130,14 @@ export const RoleCandidates = ({ workspaceId, role, label }: Props) => {
                 {modelTextOf({ row })}
               </span>
               <span className="min-w-0 truncate text-faint-foreground">
-                {factsOf({ row, inputs: snapshot.inputs })}
+                {factsOf({
+                  row,
+                  inputs: snapshot.inputs,
+                  isFirstOfProvider:
+                    list.rows.findIndex(
+                      (other) => other.provider === row.provider && other.cause === null,
+                    ) === index,
+                })}
               </span>
             </li>
           );
@@ -143,7 +154,10 @@ export const RoleCandidates = ({ workspaceId, role, label }: Props) => {
               {PROVIDER_LABEL[entry.provider]}
             </span>
             <span className="min-w-0 truncate text-faint-foreground">
-              {CANDIDATE_CAUSES[entry.cause].text}
+              {candidateCauseTextOf({
+                cause: entry.cause,
+                providerName: PROVIDER_LABEL[entry.provider],
+              })}
             </span>
           </li>
         ))}
