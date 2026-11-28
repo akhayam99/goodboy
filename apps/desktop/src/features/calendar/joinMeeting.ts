@@ -1,4 +1,4 @@
-import { isMainWindow } from '../workspace/window';
+import { isMainOrOnlyWindow } from '../workspace/isMainOrOnlyWindow';
 import { applyChipInput } from './chip/applyChipInput';
 import { callChipCommands } from './chip/callChipCommands';
 import type { ChipCall } from './chip/callChipTypes';
@@ -15,7 +15,7 @@ export const joinMeeting = async ({ link, call }: Params): Promise<void> => {
   if (!isOpened || call === null) {
     return;
   }
-  if (isMainWindow()) {
+  if (isMainOrOnlyWindow()) {
     applyChipInput({ input: { kind: 'joined', call }, now: Date.now() });
     return;
   }
