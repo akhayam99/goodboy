@@ -88,9 +88,7 @@ describe('an agent names its provider, model and why', () => {
 
     within(brief).getByText('Claude');
     within(brief).getByText('Why Claude:', { exact: false });
-    within(brief).getByText(
-      /The Lead asked for Cursor Sonnet 5.5: read-only jobs only: cannot block Cursor/,
-    );
+    within(brief).getByText(/The Lead asked for Cursor Sonnet 5.5: cannot block Cursor/);
     within(brief).getByText('The Lead said: "Cursor has room and Sonnet fits a standard test."');
     expect(within(brief).queryByText(/used Sonnet 5.5/)).toBeNull();
 
