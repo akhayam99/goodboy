@@ -1,21 +1,13 @@
 import { brandId, type Agent, type AgentId, type MountId, type Session } from '@goodboy/types';
-import type {
-  IsoDateTime,
-  SessionMountView,
-  TurnState,
-  Workflow,
-  WorkflowId,
-} from '@goodboy/types';
+import type { SessionMountView, TurnState, Workflow, WorkflowId } from '@goodboy/types';
 import { anAgent } from '@goodboy/types/testing';
 import type { GitlabMergeRequest } from '../../../../features/integrations/gitlab/client';
 import type { BitbucketPullRequest } from '../../../../features/integrations/bitbucket/client';
 import {
   at,
   harborline,
-  ledgerCore,
   mountGithubOf,
   mountOf,
-  notifyRelay,
   paymentsApi,
   runningState,
   seedColumn,
@@ -318,7 +310,3 @@ export const seedReplayRequests = ({ store, session, requests }: RequestsParams)
     mountRequests: hosted,
   }));
 };
-
-export const REPLAY_PROJECTS = { paymentsApi, ledgerCore, notifyRelay } as const;
-
-export const REPLAY_TOUCH: IsoDateTime = at(REPLAY_TIMES.afterMerge);
