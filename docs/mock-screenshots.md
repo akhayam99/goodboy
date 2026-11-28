@@ -59,6 +59,10 @@ site into the gitignored `apps/desktop/dist-demo/`. The script in
 `apps/desktop/package.json` enables `VITE_GOODBOY_MOCK=1`, uses mode `demo`
 and sets a relative asset base, so the same output serves the root of
 `demo.goodboy-ai.dev` and `vite preview` without the Tauri runtime. It uses the existing mock entry in `apps/desktop/src/main.tsx`.
+In mode `demo` only, `apps/desktop/vite/demoChunks.ts` merges every module the
+entry loads into one boot chunk and the small modules that lazy chunks share
+into one `shared` chunk, so a visitor far from the edge waits for a dozen
+requests instead of a few hundred. The desktop build keeps the default split.
 `apps/desktop/src/shared/lib/scrollerStyle.ts` returns the browser scrollbar
 default before scene IPC is installed, so the root provider does not call
 native IPC during that first mount.
