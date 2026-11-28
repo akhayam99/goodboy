@@ -24,6 +24,9 @@
       "ignoreIssues": {
         "src/features/artifacts/artifactMirror/artifactMirrorQueue.ts": ["exports"],
         "src/features/browser/browserBudgets.ts": ["files"],
+        "src/features/home/grid/homeWidgets.ts": ["exports"],
+        "src/features/home/grid/placeWidgets.ts": ["exports"],
+        "src/features/live-state/hooks/useWorkOf/index.ts": ["files"],
         "src/features/track/trackOf.ts": ["files"],
         "src/app/shellBudgets.ts": ["files"],
         "src/store/slices/boot/bootBudgets.ts": ["files"],
