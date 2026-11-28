@@ -51,7 +51,7 @@ portable-pty = "0.9"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "net", "io-util", "sync", "time"] }
 snow = "0.9"
-qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+qrcode = { version = "0.15", default-features = false, features = ["svg"] }
 rand = "0.10"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 
