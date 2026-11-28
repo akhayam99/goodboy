@@ -32,7 +32,7 @@ export const StorySessionScene = ({ stage }: Props) => {
     <>
       <style>{SETTLED_MOTION}</style>
       <NewSessionBridge />
-      <AppFrame view={stage === 'bring' ? 'connection-linear' : 'session'} hasPane hasDraft />
+      <AppFrame view="session" hasPane hasDraft />
     </>
   );
 };

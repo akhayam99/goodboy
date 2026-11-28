@@ -45,6 +45,7 @@ import type { MonitoringSliceState } from './slices/monitoring/state';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { OrchestratorHintDraftsState } from './slices/orchestratorHintDrafts/state';
 import type { SessionDraftState } from './slices/sessionDraft/state';
+import type { HomeState } from './slices/home/state';
 import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
 import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
@@ -178,6 +179,7 @@ type AppSliceState = ArtifactsState &
   BugReportDraftState &
   OrchestratorHintDraftsState &
   SessionDraftState &
+  HomeState &
   ContextDrawerSliceState &
   DecisionsSliceState &
   DrawerSliceState &

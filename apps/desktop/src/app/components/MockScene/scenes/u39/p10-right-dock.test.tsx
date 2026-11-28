@@ -193,6 +193,7 @@ describe('the ux39 right dock scenes', () => {
     expect(places).toEqual([
       'workspace',
       'new',
+      'home',
       'board',
       'inbox',
       'workflows',

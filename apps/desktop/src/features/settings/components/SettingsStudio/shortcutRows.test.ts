@@ -27,7 +27,7 @@ describe('shortcutRows', () => {
         label: 'New workspace',
         first: 'home.newWorkspace',
         last: 'home.newWorkspace',
-        where: 'On Home, where no workspace is open',
+        where: 'On Workspaces, where no workspace is open',
         also: null,
       },
     ]);

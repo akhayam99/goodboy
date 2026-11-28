@@ -32,6 +32,7 @@ export const COLUMN_DOORS: ReadonlyArray<ColumnDoor> = DESTINATIONS.filter(
 ).map((destination) => doorOf({ destination }));
 
 export type ColumnActions = {
+  readonly openHome: () => void;
   readonly openBoard: () => void;
   readonly openInbox: () => void;
   readonly openChat: () => void;
@@ -53,6 +54,9 @@ type OpenDoorParams = {
 
 export const openColumnDoor = ({ id, actions }: OpenDoorParams): void => {
   switch (id) {
+    case 'home':
+      actions.openHome();
+      return;
     case 'board':
       actions.openBoard();
       return;

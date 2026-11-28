@@ -14,7 +14,7 @@ import { useLiveGroups } from '../../../central/now/useLiveGroups';
 import { useNowModel } from '../../../central/now/hooks/useNowModel';
 import { overviewHasContentOf } from '../../../central/overviewHasContentOf';
 import { useSessionWorkModel } from '../../../central/useSessionWorkModel';
-import { soleMergedAtOf } from '../../../../../store/slices/project-mounts/workRecord/soleMergedAtOf';
+import { sessionSettleOf } from '../../../../../store/slices/session-view/settle/sessionSettleOf';
 import { inPlaceFoldersOf } from '../../../../../store/slices/project-mounts/inPlaceFoldersOf';
 import { useBranchNotes } from '../../../../resolve/notes/useBranchNotes';
 import { useBranchBoard } from '../../ProjectBlocks/useBranchBoard';
@@ -36,12 +36,12 @@ export const useOverviewModel = ({ session }: Params) => {
   const model = useSessionWorkModel({ session });
   const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const clock = useNow(AUTO_CLOCK_MS, model.autoTrees.length > 0);
-  const settledAt = useAppStore((state) => soleMergedAtOf({ state, sessionId }));
+  const settledAt = useAppStore((state) => sessionSettleOf({ state, sessionId }).settledAt);
   const autoTargets = useMemo(
     () => autoRetryTargetsOf({ views: model.autoTrees, agents, now: clock, settledAt }),
     [agents, clock, model.autoTrees, settledAt],
   );
-  const { cards, actionsFor, openFor } = useNextCards({ session, model, autoTargets });
+  const { cards, actionsFor } = useNextCards({ session, model, autoTargets });
   const groups = useLiveGroups({ model, agents, now: clock });
   const moves = useMemo(
     () =>
@@ -112,7 +112,6 @@ export const useOverviewModel = ({ session }: Params) => {
     isArchived,
     isEmpty,
     actionsFor,
-    openFor,
     moves,
     looseQuestions,
     permission,

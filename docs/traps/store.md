@@ -77,11 +77,17 @@ Only `main` writes the dock badge, one number for the app, and clears it on unmo
 
 ### Two counts for one workspace, and the Rust count is a subset
 
-`workspaces_attention` (`attention.rs`) counts only what is saved: an open question, a fix run waiting for an answer, a failed push, failing checks, an errored session. It follows `deriveSessionStage`: a running session counts for a question or an error, not a failed push or failing checks. A waiting permission or plan, a stopped run, an Auto agent and a Slack reply live in memory, so an unshown workspace can read lower than its door.
+`workspaces_attention` (`attention.rs`) counts only what is saved: an open question, a fix run waiting for an answer, a failed push, failing checks, an errored session. It follows `deriveSessionStage`: a running session counts for a question or an error, not a failed push or failing checks. It reads the `state_kind` that `deriveSessionState` wrote at the last agent end (the error of a slot nobody re-ran stays, the error of a re-run slot is cleared, and `repairErroredSessions` fixes an old row at launch), and a branch the same SQL finds settled drops an error that predates its latest known merge. A waiting permission or plan, a stopped run, an Auto agent and a Slack reply live in memory, so an unshown workspace can read lower than its door.
 
 The showing window sends the exact count on `goodboy:attention`, and `attentionByWorkspaceOf` takes it only while `windowPresence` says a window shows the workspace. A closed window's old report never hides the database count, but a showing window's zero does hide a count that is behind. The dock badge is this window's count plus `useAttentionElsewhere`, never the sum of the map.
 
 `src-tauri/src/attention/parity.json` is the one source: `build.rs` generates the Rust `REASONS` table from `reasons`, and the Rust test and `attentionParity.test.ts` read its cases. A new reason is a row there and a case in both. `items_of` in `attention.rs` maps rows by position, and a compile-time length check fails until it follows.
+
+### A settled branch hides only what its times prove
+
+`isSettledOf` and the Rust clause drop an error, a stopped run or a reply only when its time is before the merge time. A closed request has no time (its `updatedAt` moves on every refresh, so it would hide a failure that came after the close), a Bitbucket merge has none, and a stopped run's time is the latest of its agents. Where a time is missing the reason stays. Do not fill a missing time with `updatedAt` or `now`.
+
+A write refused because another run owns the session (`writeOwnedSessionState`) leaves a stale `error` that the Rust count shows until the next agent end or the next launch repair. The read side still derives from the agent rows.
 
 ## Session overview cards
 

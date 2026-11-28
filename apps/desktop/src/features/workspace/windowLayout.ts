@@ -47,8 +47,8 @@ const placeOf = ({ value }: PlaceParams): Location['place'] | null => {
   if (!isRecord(value)) {
     return null;
   }
-  if (value.at === 'board') {
-    return { at: 'board' };
+  if (value.at === 'board' || value.at === 'home') {
+    return { at: value.at };
   }
   const sessionId = value.sessionId;
   if (value.at !== 'session' || !isSessionId(sessionId)) {

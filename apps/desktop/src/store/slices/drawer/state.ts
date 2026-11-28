@@ -173,7 +173,7 @@ export const WORKSPACE_TOOL_KINDS: ReadonlyArray<WorkspaceToolKind> = [
   'ask',
 ];
 
-type SessionlessToolKind = 'terminal' | 'browser' | 'monitoring';
+type SessionlessToolKind = WorkspaceToolKind;
 
 export type DrawerRequest =
   | (DrawerContent & { readonly sessionId: SessionId })

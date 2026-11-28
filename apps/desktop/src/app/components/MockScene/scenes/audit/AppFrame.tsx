@@ -7,6 +7,7 @@ import { SessionFrame } from '../../../SessionRail/SessionFrame';
 import type { ColumnActions } from '../../../ShellLeft/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
+import { openHome } from '../../../../../shared/navigation/openHome';
 import { shellArrangement } from '../../../../shellArrangement';
 import { StageBoard } from '../../../../../features/workspace/components/StageBoard';
 import { SessionDraftPane } from '../../../../../features/session/components/SessionDraftPane';
@@ -53,6 +54,7 @@ export const AppFrame = ({ view, hasPane = false, hasDraft = false, center }: Pr
   useSceneShortcuts({ openPalette: overlays.openPalette });
   const actions = useMemo<ColumnActions>(
     () => ({
+      openHome,
       openBoard: goToBoard,
       openInbox: overlays.openInbox,
       openChat: overlays.openChat,

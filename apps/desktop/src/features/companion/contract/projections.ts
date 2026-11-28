@@ -1,4 +1,4 @@
-import type { ActionId, Int, IsoTimestamp } from './primitives';
+import type { ActionId, Int, IsoTimestamp, ObjectVersion } from './primitives';
 import type { Decision } from './decisions';
 import type {
   AttentionReason,
@@ -18,6 +18,28 @@ export type ProjectionMeta = {
   readonly generatedAt: IsoTimestamp;
 };
 
+export type LeadProposalOption = {
+  readonly key: string;
+  readonly label: string;
+  readonly role: string | null;
+  readonly actionId?: ActionId;
+};
+
+export type LeadProposal = {
+  readonly delegationId: string;
+  readonly version: ObjectVersion;
+  readonly role: string;
+  readonly title: string;
+  readonly task?: string;
+  readonly options: ReadonlyArray<LeadProposalOption>;
+  readonly notNowActionId?: ActionId;
+};
+
+export type LeadAsk = {
+  readonly question?: string;
+  readonly proposal?: LeadProposal;
+};
+
 export type NeedsYouRow = {
   readonly id: string;
   readonly workspaceId: string;
@@ -31,6 +53,7 @@ export type NeedsYouRow = {
   readonly waitingText: string | null;
   readonly since: IsoTimestamp | null;
   readonly decision: Decision | null;
+  readonly ask?: LeadAsk;
 };
 
 export type NeedsYouWorkspace = {
@@ -120,6 +143,8 @@ export type SessionLine = {
   readonly at: IsoTimestamp | null;
   readonly role: string | null;
   readonly target: LineTarget | null;
+  readonly title?: string;
+  readonly summary?: string;
 };
 
 export type SessionProject = {

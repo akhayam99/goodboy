@@ -146,3 +146,22 @@ describe('Delete local branch', () => {
     expect(close?.pendingLabel).toBe('Closing…');
   });
 });
+
+describe('the Merge order row', () => {
+  it('sits in the row menu with its count while another branch shares a file', () => {
+    const open = factsOf({ state: 'PR open, 3 to resolve' });
+
+    expect(labelsOf({ entries: overflowOf({ facts: open }) })).not.toContain('Merge order (2)');
+    expect(labelsOf({ entries: overflowOf({ facts: { ...open, overlapCount: 2 } }) })).toContain(
+      'Merge order (2)',
+    );
+  });
+
+  it('stays away from a merged or closed branch', () => {
+    for (const state of ['Merged', 'Worktree closed, files kept']) {
+      const facts = { ...factsOf({ state }), overlapCount: 2 };
+
+      expect(labelsOf({ entries: overflowOf({ facts }) })).not.toContain('Merge order (2)');
+    }
+  });
+});

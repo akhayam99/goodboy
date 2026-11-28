@@ -1,19 +1,19 @@
 import { memo } from 'react';
-import { brandId, type MountId } from '@goodboy/types';
-import { Button, Chip, cn, ROW_HOVER, StatusDot, Tooltip } from '@goodboy/ui';
+import { Button, cn, ROW_HOVER, StatusDot, tintClasses, Tooltip } from '@goodboy/ui';
 import { sessionPlace, useAppStore } from '../../../../store';
-import { failingChecksOf } from '../../../branch/checks/failingChecksOf';
 import { branchTabPlaceOf } from '../../../branch/branchTabPlaceOf';
 import { TRAIL_SLOT } from '../../../../shared/components/trailingSlot';
 import { useMountRowMenu } from '../../hooks/useMountRowMenu';
 import { MountRowMenuButton } from '../MountRowMenuButton';
 import { boardRowCellsOf } from '../../central/board/boardRowCellsOf';
-import { boardTileChipOf } from '../../central/board/boardTileChipOf';
-import { OverlapChip } from '../../../overlap/OverlapChip';
+import type { ActionCardModel } from '../../central/next/actionCardsOf';
+import { useBranchRow } from './useBranchRow';
 import { BoardBranchName } from './BoardBranchName';
 import { BoardTileAction } from './BoardTileAction';
 import { BoardTileFacts } from './BoardTileFacts';
 import { useBoardContext } from './useBoardContext';
+
+const NO_CARDS: ReadonlyArray<ActionCardModel> = [];
 
 type Props = {
   readonly rowId: string;
@@ -26,6 +26,7 @@ const BoardTileView = ({ rowId }: Props) => {
     entryByRowId,
     runningByRowId,
     cardsByRowId,
+    shownAskIds,
     newRowIds,
     now,
     permissionMount,
@@ -37,33 +38,20 @@ const BoardTileView = ({ rowId }: Props) => {
     mountId: entry === null ? null : entry.fact.mountId,
     anchorKey: `board-mount-${rowId}`,
   });
-  const failingName = useAppStore((state) =>
-    entry === null || entry.story.state !== 'checks-failing' || entry.fact.request === null
-      ? null
-      : (failingChecksOf({
-          state,
-          sessionId: session.id,
-          mountId: brandId<MountId>({ value: entry.fact.mountId }),
-          prNumber: entry.fact.request.number,
-        })?.checks[0]?.name ?? null),
-  );
   const row = rowById.get(rowId);
-  if (row === undefined) {
-    return null;
-  }
   const runningCount = runningByRowId.get(rowId) ?? 0;
-  const stateChip = boardTileChipOf({
+  const branchRow = useBranchRow({
+    sessionId: session.id,
     row,
     entry,
     runningCount,
-    isPermissionShown: permissionMount !== null && permissionMount.mountId === row.mountId,
+    cards: cardsByRowId.get(rowId) ?? NO_CARDS,
+    shownAskIds,
+    isPermissionShown: permissionMount !== null && permissionMount.mountId === row?.mountId,
   });
-  const isCheckNamed =
-    stateChip !== null && failingName !== null && entry?.story.word === stateChip.word;
-  const chip =
-    stateChip === null || failingName === null || !isCheckNamed
-      ? stateChip
-      : { ...stateChip, word: `${failingName} failed` };
+  if (row === undefined || branchRow === null) {
+    return null;
+  }
   const title =
     row.branch === null
       ? boardRowCellsOf({
@@ -123,31 +111,29 @@ const BoardTileView = ({ rowId }: Props) => {
             <BoardBranchName name={row.branch} />
           )}
         </span>
-        {entry === null ? null : (
-          <BoardTileFacts rowId={rowId} title={title} onOpenChanges={openChanges} />
+        {entry === null ? (
+          branchRow.word === null ? null : (
+            <span
+              data-board-facts=""
+              className="min-w-0 truncate text-meta tabular-nums text-muted-foreground"
+            >
+              <span data-board-word="" className={tintClasses(branchRow.word.tone).text}>
+                {branchRow.word.word}
+              </span>
+            </span>
+          )
+        ) : (
+          <BoardTileFacts
+            rowId={rowId}
+            title={title}
+            word={branchRow.word}
+            hoverFacts={branchRow.hoverFacts}
+            onOpenChanges={openChanges}
+          />
         )}
       </span>
       <span className="pointer-events-none relative flex min-w-0 shrink-0 items-center gap-3 text-meta">
-        {chip === null ? null : (
-          <span
-            data-board-chip=""
-            className={cn('flex max-w-48 min-w-0', isCheckNamed && 'pointer-events-auto')}
-          >
-            <Chip
-              kind="state"
-              tone={chip.tone}
-              emphasis="subtle"
-              bordered={false}
-              className="min-w-0 shrink"
-              {...(isCheckNamed && { title: chip.word })}
-              label={<span className="min-w-0 truncate">{chip.word}</span>}
-            />
-          </span>
-        )}
-        {entry === null ? null : (
-          <OverlapChip mountId={brandId<MountId>({ value: entry.fact.mountId })} />
-        )}
-        <BoardTileAction rowId={rowId} />
+        <BoardTileAction rowId={rowId} action={branchRow.action} caution={branchRow.caution} />
         {entry === null ? null : (
           <span data-board-actions="" className={cn(TRAIL_SLOT, 'pointer-events-auto row-actions')}>
             <MountRowMenuButton

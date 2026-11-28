@@ -15,8 +15,7 @@ Go › Show or Hide Browser toggle it too.
 - It stays open across moves, beside any page but the Browser page, and closes
   when its session is archived or deleted (`slotAfterSessionGone`).
 - The tool, the X or Esc on the pane closes it; Esc inside the page goes to the
-  page. On the Desk ⌘W closes it, and the last tool closing shows **Desk
-  closed** with **Reopen**, which returns it on its address.
+  page. ⌘W closes it when it is the tool in front.
 
 The pane opens at 720 and drags from 480 to the room the session column leaves
 (it keeps 560 and the gutters), past the reader tier's 1000 cap. It keeps its

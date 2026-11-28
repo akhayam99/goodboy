@@ -6,7 +6,7 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
-import { cancelledRunIds, deriveSessionState } from '../sessions/sessionMutators';
+import { cancelledRunIds, deriveSessionState, entriesOf } from '../sessions/sessionMutators';
 import { cancelTurnStartWindow } from '../turn/turnStartWindow';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
@@ -67,10 +67,11 @@ export const discardWorkflow = (set: SetFn, get: GetFn) => {
     set((s) => {
       const nextTurnState = { ...s.agentTurnState, ...frozen };
       const sessionRuns = s.sessionPhaseRuns[sessionId] ?? [];
-      const survivorStates = sessionRuns
-        .map((a) => nextTurnState[a.id])
-        .filter((st): st is NonNullable<typeof st> => st !== undefined);
-      derived = deriveSessionState(survivorStates, now);
+      derived = deriveSessionState({
+        entries: entriesOf({ ids: sessionRuns.map((a) => a.id), turns: nextTurnState }),
+        agents: sessionRuns,
+        now,
+      });
       return {
         agentTurnState: nextTurnState,
         workflowContinueAttempts: withoutOwn(s.workflowContinueAttempts),

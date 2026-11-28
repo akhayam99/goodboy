@@ -74,7 +74,6 @@ const Probe = () => {
       questions={[]}
       permission={permission}
       actionsFor={actionsFor}
-      openFor={() => null}
       kickerById={new Map()}
     />
   );

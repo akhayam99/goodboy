@@ -35,6 +35,8 @@ const actionTargetOf = ({ action }: ActionParams): Target => {
       return { objectId: action.agentId, version: action.seenVersion };
     case 'answerSlackReply':
       return { objectId: action.draftId, version: action.seenVersion };
+    case 'decideProposal':
+      return { objectId: `${action.delegationId}.${action.choice}`, version: action.seenVersion };
     default: {
       const unexpected: never = action;
       throw new Error(`unsupported decide action: ${String(unexpected)}`);

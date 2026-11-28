@@ -26,7 +26,6 @@ export const CentralColumn = ({ session }: Props) => {
     isArchived,
     isEmpty,
     actionsFor,
-    openFor,
     moves,
     looseQuestions,
     permission,
@@ -40,7 +39,7 @@ export const CentralColumn = ({ session }: Props) => {
     noticesView,
   } = useOverviewModel({ session });
   const columnRef = useRef<HTMLDivElement>(null);
-  useMoveKeys({ sessionId, face: 'overview', containerRef: columnRef, moves, actionsFor });
+  useMoveKeys({ sessionId, containerRef: columnRef, moves, actionsFor });
   return (
     <div ref={columnRef} data-central-column className={PANE_RHYTHM.groups}>
       {isEmpty ? null : <OverviewFacts sessionId={sessionId} elapsedMs={board.kpis.elapsedMs} />}
@@ -61,7 +60,6 @@ export const CentralColumn = ({ session }: Props) => {
           questions={looseQuestions}
           permission={permission}
           actionsFor={actionsFor}
-          openFor={openFor}
           kickerById={kickerById}
         />
       </HeightMotion>
@@ -72,15 +70,9 @@ export const CentralColumn = ({ session }: Props) => {
         sessionId={sessionId}
         cards={moves.next}
         actionsFor={actionsFor}
-        openFor={openFor}
         hasFilledMove={!hasNeedsYou}
       />
-      <NextOverflow
-        sessionId={sessionId}
-        cards={placed.loose}
-        actionsFor={actionsFor}
-        openFor={openFor}
-      />
+      <NextOverflow sessionId={sessionId} cards={placed.loose} actionsFor={actionsFor} />
       {isEmpty || board.board.rows.length === 0 ? null : (
         <ProjectBlocks
           key={sessionId}
@@ -89,7 +81,6 @@ export const CentralColumn = ({ session }: Props) => {
           cards={moves.rest}
           cardsByRowId={placed.byRowId}
           actionsFor={actionsFor}
-          openFor={openFor}
           shownAskIds={shownAskIds}
           permissionMount={permission === null ? null : { mountId: permission.mountId }}
         />

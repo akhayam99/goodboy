@@ -186,7 +186,7 @@ payload }` or null. Only Terminal and Browser, the workspace tools, may carry
 `sessionId: null`. A second window has its own store and slot.
 
 `drawerBack` holds only the other half of a pair on screen: a workspace tool beside
-a reader, or the agent beside the pull request on the Desk (`heldBack`, applied in
+a reader (`heldBack`, applied in
 `settledSlot`). Anything else the slot replaced is gone, and a tool still waits in
 the grid.
 

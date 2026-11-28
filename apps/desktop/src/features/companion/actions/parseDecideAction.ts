@@ -40,6 +40,18 @@ export const parseDecideAction = ({ raw }: ParseParams): DecideAction | null => 
       }
       return { kind: 'answerQuestion', ...base, questionId, seenVersion, text };
     }
+    case 'decideProposal': {
+      const delegationId = read.id({ name: 'delegationId' });
+      const seenVersion = read.id({ name: 'seenVersion' });
+      const choice = read.pick({
+        name: 'choice',
+        options: ['primary', 'alternative-0', 'alternative-1', 'notNow'],
+      });
+      if (delegationId === null || seenVersion === null || choice === null) {
+        return null;
+      }
+      return { kind: 'decideProposal', ...base, delegationId, seenVersion, choice };
+    }
     case 'approvePlan': {
       const planId = read.id({ name: 'planId' });
       const seenPlanVersion = read.int({ name: 'seenPlanVersion' });

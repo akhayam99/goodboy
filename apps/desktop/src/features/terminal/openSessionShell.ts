@@ -1,0 +1,43 @@
+import { CHECK_STATE } from '../../store/slices/notifications/errorRecovery';
+import type { SessionId } from '@goodboy/types';
+import { isBranchlessSession } from '../../shared/utils/isBranchlessSession';
+import { useAppStore } from '../../store';
+import { selectPlaceMount } from '../scripts/selectPlaceMount';
+import { resolveActiveMountPath } from '../../store/slices/worktrees/resolveActiveMountPath';
+import { openSessionFolderTerminal } from './openSessionFolderTerminal';
+import { openSessionTerminal } from './openSessionTerminal';
+import { openSessionTerminalHere } from './openSessionTerminalHere';
+import { sessionTerminalCwd } from './sessionTerminalCwd';
+
+type Params = {
+  readonly sessionId: SessionId;
+};
+
+export const openSessionShell = ({ sessionId }: Params): void => {
+  const state = useAppStore.getState();
+  if (isBranchlessSession({ branch: state.sessionBranches[sessionId] })) {
+    void openSessionFolderTerminal({ sessionId }).catch((error: unknown) =>
+      state.reportError({
+        recovery: CHECK_STATE,
+        title: "Couldn't open the terminal",
+        error,
+        sessionId,
+      }),
+    );
+    return;
+  }
+  const mountPaths = (state.sessionProjectMounts[sessionId] ?? [])
+    .filter((mount) => mount.isAttached && mount.diskState === 'present')
+    .map((mount) => mount.worktreePath);
+  const cwd = sessionTerminalCwd({
+    mountPaths,
+    placePath: selectPlaceMount({ state, sessionId })?.worktreePath ?? null,
+    remembered: state.terminalScopes[sessionId] ?? null,
+    activePath: resolveActiveMountPath({ state, sessionId }),
+  });
+  if (cwd === null) {
+    void openSessionTerminalHere({ sessionId, isFresh: false });
+    return;
+  }
+  openSessionTerminal({ state, sessionId, cwd });
+};

@@ -1,4 +1,3 @@
-import { deskStackOf } from './deskStackOf';
 import { gridAfterOpen } from './gridAfterOpen';
 import { isPairedSlot } from './isPairedSlot';
 import { isWorkspaceTool } from './isWorkspaceTool';
@@ -16,26 +15,7 @@ type Params = {
 
 type Pair = Pick<DrawerSliceState, 'drawer' | 'drawerBack'>;
 
-const DESK_READER_KINDS: ReadonlyArray<OpenDrawer['kind']> = ['transcript', 'pull-request'];
-
-const deskPairAfterOpen = ({ drawer, back, request }: Omit<Params, 'grid'>): Pair | null => {
-  if (deskStackOf({ top: drawer, back }) !== null && isWorkspaceTool({ content: request })) {
-    return { drawer, drawerBack: back };
-  }
-  if (!DESK_READER_KINDS.includes(request.kind)) {
-    return null;
-  }
-  const other = [drawer, back].find(
-    (entry) => entry !== null && deskStackOf({ top: request, back: entry }) !== null,
-  );
-  return other === undefined ? null : { drawer: request, drawerBack: other };
-};
-
 const pairAfterOpen = ({ drawer, back, request }: Omit<Params, 'grid'>): Pair => {
-  const desk = deskPairAfterOpen({ drawer, back, request });
-  if (desk !== null) {
-    return desk;
-  }
   if (drawer !== null && isPairedSlot({ top: drawer, back })) {
     const isTool = isWorkspaceTool({ content: request });
     return {

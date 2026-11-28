@@ -34,11 +34,17 @@ export const StartWhereItRuns = ({ workspaceId, model, isDisabled }: Props) => {
       role="group"
       aria-label={RUN_MODEL_COPY.whereItRuns}
       data-where-it-runs=""
-      className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1"
+      className="flex min-w-0 items-center justify-between gap-3"
     >
-      <ProviderGlyph id={effective.provider} size={ICON_SIZE.row} />
-      <p className="min-w-0 text-meta text-muted-foreground">{parts.join(' · ')}</p>
-      <RunModelChip model={model} isDisabled={isDisabled} variant="change" />
+      <div className="flex min-w-0 items-start gap-2">
+        <span className="flex h-lh shrink-0 items-center text-meta">
+          <ProviderGlyph id={effective.provider} size={ICON_SIZE.row} />
+        </span>
+        <p className="min-w-0 text-meta text-muted-foreground">{parts.join(' · ')}</p>
+      </div>
+      <div className="shrink-0">
+        <RunModelChip model={model} isDisabled={isDisabled} variant="change" />
+      </div>
     </div>
   );
 };

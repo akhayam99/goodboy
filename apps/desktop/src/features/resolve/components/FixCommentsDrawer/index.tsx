@@ -46,7 +46,7 @@ export const FixCommentsDrawer = ({
   onClose,
 }: Props) => {
   const navigate = useAppStore((state) => state.navigate);
-  const { all } = useReviewEntries({ sessionId, scope: 'all' });
+  const { entries } = useReviewEntries({ sessionId, scope: 'branch', mountId });
   const draft = useDraftRouting({ sessionId });
   const steps = useFixChain({ sessionId });
   const [filter, setFilter] = useState<CommentFilter>('all');
@@ -61,11 +61,11 @@ export const FixCommentsDrawer = ({
   useEffect(() => {
     void loadSessionOpenQuestions(sessionId);
   }, [loadSessionOpenQuestions, sessionId]);
-  const open = useMemo(() => all.filter((entry) => entry.isFixable), [all]);
+  const open = useMemo(() => entries.filter((entry) => entry.isFixable), [entries]);
   const outcomes = useMemo(
     () =>
       new Map<string, CommentOutcome | null>(
-        all.map((entry) => [
+        entries.map((entry) => [
           entry.threadId,
           commentOutcomeOf({
             thread: entry.row.thread,
@@ -82,15 +82,15 @@ export const FixCommentsDrawer = ({
           }),
         ]),
       ),
-    [all, attempts, questions],
+    [entries, attempts, questions],
   );
   const listed = useMemo(
     () =>
-      all.filter((entry) => {
+      entries.filter((entry) => {
         const kind = outcomes.get(entry.threadId)?.kind ?? null;
         return entry.isFixable || (kind !== null && kind !== 'waiting');
       }),
-    [all, outcomes],
+    [entries, outcomes],
   );
   const [explicit, setExplicit] = useState<ReadonlySet<string> | null>(() => {
     if (threadIds !== null) {

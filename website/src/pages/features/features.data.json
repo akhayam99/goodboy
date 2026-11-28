@@ -31,10 +31,10 @@
           "shown": true
         },
         {
-          "title": "Home",
+          "title": "Workspaces",
           "text": "A window with no workspace open lists your workspaces with their folders, and New workspace opens the same form in place.",
           "group": "Set up",
-          "also": "Home",
+          "also": "Workspaces",
           "shown": true
         },
         {
@@ -317,6 +317,12 @@
           "also": "right click menus"
         },
         {
+          "title": "Home",
+          "text": "Home is the first page of a workspace: what needs you, what runs and how much is left, with the usage of your providers.",
+          "group": "The board",
+          "also": "home"
+        },
+        {
           "title": "Needs you",
           "text": "See what waits on you at the top of the Board.",
           "group": "The board",
@@ -542,10 +548,10 @@
           "shown": true
         },
         {
-          "title": "Overview and Desk",
-          "text": "A session has two faces: Overview to read it, Desk to work in it. Open a tool from the right rail and the page splits, with the session's state, Needs you and Now in a column beside your tools.",
+          "title": "Tools beside the page",
+          "text": "Open Terminal, Browser, Scripts, Ask or Monitor from the right rail and the tool opens in the dock beside the page, the same on every screen.",
           "group": "Workspaces and folders",
-          "also": "desk",
+          "also": "tools",
           "shown": true
         },
         {
@@ -1283,10 +1289,10 @@
           "also": "one page per agent"
         },
         {
-          "title": "Agent and pull request on the Desk",
-          "text": "Watch an agent fix what its pull request shows, side by side: the agent on top, the pull request with its checks and conversation below, beside the tools you open from the right rail.",
+          "title": "Pull request panel",
+          "text": "A pull request opens in the place beside the tools, one panel at a time with the agent's page.",
           "group": "Agents",
-          "also": "agent and pull request"
+          "also": "pull request panel"
         },
         {
           "title": "What the agent received",

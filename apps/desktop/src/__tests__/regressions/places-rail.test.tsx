@@ -25,6 +25,7 @@ const SETTLE_MS = 2_000;
 const RAIL_ORDER = [
   'workspace',
   'new',
+  'home',
   'board',
   'inbox',
   'workflows',

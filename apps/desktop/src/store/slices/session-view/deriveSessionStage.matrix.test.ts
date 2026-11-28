@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Session, SessionAttentionReason, SessionId, WorkspaceId } from '@goodboy/types';
 import type { StagePullRequest } from './attentionFactsOf';
+import { ATTENTION_REASON_META } from '../../../features/session/session-stage';
 import { deriveSessionStage } from './deriveSessionStage';
 
 type Params = Parameters<typeof deriveSessionStage>[0];
@@ -723,5 +724,210 @@ describe('deriveSessionStage counts', () => {
       fixNeedsYouCount: 2,
       fixCouldntFixCount: 4,
     });
+  });
+});
+
+describe('deriveSessionStage on a settled branch, one case per reason', () => {
+  const SETTLED_AT = 2_000;
+  const BEFORE = 1_000;
+  const AFTER = 3_000;
+
+  type SettleOver = Partial<NonNullable<Params['settle']>>;
+
+  const settleOf = (over: SettleOver = {}): NonNullable<Params['settle']> => ({
+    isSettled: true,
+    settledAt: SETTLED_AT,
+    isRunLive: false,
+    unreadAt: BEFORE,
+    stoppedRunAt: BEFORE,
+    ...over,
+  });
+
+  type SettleRow = {
+    readonly reason: SessionAttentionReason;
+    readonly params: Partial<Params>;
+    readonly isDroppedAtRest: boolean;
+    readonly isDroppedWhileLive: boolean;
+  };
+
+  const mergedPr = livePr({ state: 'merged' });
+  const openPr = livePr({ state: 'open' });
+
+  const SETTLE_ROWS: ReadonlyArray<SettleRow> = [
+    {
+      reason: 'needs-approval',
+      params: { hasBlockedAgent: true },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: false,
+    },
+    {
+      reason: 'agent-error',
+      params: { session: errored, isFailureEnded: true },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: true,
+    },
+    {
+      reason: 'run-stopped',
+      params: { hasStoppedRun: true },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: true,
+    },
+    {
+      reason: 'push-failed',
+      params: { pushFailedCount: 1 },
+      isDroppedAtRest: false,
+      isDroppedWhileLive: false,
+    },
+    {
+      reason: 'plan-approval',
+      params: { hasPlanWaiting: true },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: false,
+    },
+    {
+      reason: 'open-question',
+      params: { openQuestionCount: 1 },
+      isDroppedAtRest: false,
+      isDroppedWhileLive: false,
+    },
+    {
+      reason: 'run-waits-for-go',
+      params: { hasRunWaitingForGo: true },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: false,
+    },
+    {
+      reason: 'auto-needs-you',
+      params: { hasAutoNeedsYou: true },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: false,
+    },
+    {
+      reason: 'slack-reply-waiting',
+      params: { hasSlackReplyWaiting: true },
+      isDroppedAtRest: false,
+      isDroppedWhileLive: false,
+    },
+    {
+      reason: 'fix-needs-you',
+      params: { fixNeedsYouCount: 1 },
+      isDroppedAtRest: false,
+      isDroppedWhileLive: false,
+    },
+    {
+      reason: 'run-paused-at-limit',
+      params: { hasLimitPausedRun: true },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: false,
+    },
+    {
+      reason: 'ci-failed',
+      params: { pr: livePr({ state: 'open', checks: 'failure' }) },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: true,
+    },
+    {
+      reason: 'changes-requested',
+      params: { pr: livePr({ state: 'open', reviewDecision: 'changes_requested' }) },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: true,
+    },
+    {
+      reason: 'fix-couldnt-fix',
+      params: { fixCouldntFixCount: 1 },
+      isDroppedAtRest: false,
+      isDroppedWhileLive: false,
+    },
+    {
+      reason: 'pr-queued',
+      params: { pr: livePr({ state: 'queued', reviewDecision: 'approved' }) },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: true,
+    },
+    {
+      reason: 'pr-approved',
+      params: { pr: livePr({ state: 'approved', reviewDecision: 'approved' }) },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: true,
+    },
+    {
+      reason: 'unread-reply',
+      params: { hasUnread: true },
+      isDroppedAtRest: true,
+      isDroppedWhileLive: true,
+    },
+  ];
+
+  const holdsOf = (params: Params): ReadonlyArray<SessionAttentionReason> => {
+    const info = deriveSessionStage(params);
+    return [...(info.attention === null ? [] : [info.attention]), ...(info.otherReasons ?? [])];
+  };
+
+  const settledParams = ({ row, settle }: { row: SettleRow; settle: SettleOver }): Params => ({
+    ...base,
+    ...row.params,
+    pr: PR_REASONS.includes(row.reason) ? mergedPr : (row.params.pr ?? mergedPr),
+    settle: settleOf(settle),
+  });
+
+  const PR_REASONS: ReadonlyArray<SessionAttentionReason> = [
+    'ci-failed',
+    'changes-requested',
+    'pr-queued',
+    'pr-approved',
+  ];
+
+  it('lists every reason once', () => {
+    expect(SETTLE_ROWS.map((row) => row.reason).sort()).toEqual(
+      Object.keys(ATTENTION_REASON_META).sort(),
+    );
+  });
+
+  it.each(SETTLE_ROWS)('$reason: holds as the table says on a merged branch', (row) => {
+    const holds = holdsOf(settledParams({ row, settle: {} }));
+
+    expect(holds.includes(row.reason)).toBe(!row.isDroppedAtRest);
+  });
+
+  it.each(SETTLE_ROWS)('$reason: holds as the table says while a run is live', (row) => {
+    const holds = holdsOf(settledParams({ row, settle: { isRunLive: true } }));
+
+    expect(holds.includes(row.reason)).toBe(!row.isDroppedWhileLive);
+  });
+
+  it.each(SETTLE_ROWS)('$reason: comes back when the request is reopened', (row) => {
+    const reopened: Params = {
+      ...base,
+      ...row.params,
+      pr: row.params.pr ?? openPr,
+      isFailureEnded: false,
+      settle: settleOf({ isSettled: false, settledAt: null }),
+    };
+
+    expect(holdsOf(reopened)).toContain(row.reason);
+  });
+
+  it.each(['unread-reply', 'run-stopped'] as const)(
+    '%s: stays when it happened after the merge or its time is unknown',
+    (reason) => {
+      const row = SETTLE_ROWS.find((candidate) => candidate.reason === reason);
+      if (row === undefined) {
+        throw new Error('missing row');
+      }
+      const field = reason === 'unread-reply' ? 'unreadAt' : 'stoppedRunAt';
+
+      expect(holdsOf(settledParams({ row, settle: { [field]: AFTER } }))).toContain(reason);
+      expect(holdsOf(settledParams({ row, settle: { [field]: null } }))).toContain(reason);
+    },
+  );
+
+  it('a merged branch with nothing left reads as done', () => {
+    const info = deriveSessionStage({
+      ...base,
+      pr: mergedPr,
+      settle: settleOf(),
+    });
+
+    expect(info).toMatchObject({ stage: 'done', attention: null });
   });
 });

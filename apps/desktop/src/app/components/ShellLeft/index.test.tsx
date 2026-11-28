@@ -42,6 +42,7 @@ const open = sessionOf({ goal: 'Fix webhook retries', lastOpenedAt: '2026-10-06T
 const OPEN_ID = brandId<SessionId>({ value: open.id });
 
 const actionsOf = (): ColumnActions => ({
+  openHome: vi.fn(),
   openBoard: vi.fn(),
   openInbox: vi.fn(),
   openChat: vi.fn(),
@@ -122,6 +123,7 @@ describe('the places rail', () => {
     expect(wordsOf()).toEqual([
       'Harborline',
       'New',
+      'Home',
       'Board',
       'Tasks',
       'Workflows',

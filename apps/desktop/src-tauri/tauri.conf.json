@@ -1,13 +1,13 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Goodboy",
-  "version": "0.44.0",
+  "version": "0.44.1",
   "identifier": "com.goodboy.desktop",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1421",
     "beforeDevCommand": "pnpm dev",
-    "beforeBuildCommand": "pnpm build"
+    "beforeBuildCommand": "pnpm build:bundle"
   },
   "app": {
     "windows": [

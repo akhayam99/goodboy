@@ -383,6 +383,7 @@ describe('the sidebar a 0.39 build saved', () => {
           arrangement: shellArrangement({ hasWorkspace: true }),
           workspaceId: WS,
           actions: {
+            openHome: noop,
             openBoard: noop,
             openInbox: noop,
             openChat: noop,

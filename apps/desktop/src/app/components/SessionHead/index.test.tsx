@@ -180,11 +180,11 @@ describe('the session head', () => {
     }
   });
 
-  it('holds only New and More in the title row on every tab', () => {
+  it('holds only New, More and Close in the title row on every tab', () => {
     go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID, lens: 'context' }) });
     renderWorkspace();
 
-    expect(titleRowLabels()).toEqual(['New', 'More session actions']);
+    expect(titleRowLabels()).toEqual(['New', 'More session actions', 'Close session']);
   });
 
   it('lists Pin, Link work, Copy, Archive and Delete in More session actions', () => {
@@ -231,12 +231,12 @@ describe('the session head', () => {
     expect(selectGridTool({ state: useAppStore.getState(), kind: 'terminal' })).not.toBeNull();
   });
 
-  it('keeps one menu on a detail page: the title row holds New and no session menu', async () => {
+  it('keeps one menu on a detail page: the title row holds New and Close, and no session menu', async () => {
     go({ to: ARTIFACT_PLACE });
     renderWorkspace();
     await waitFor(() => expect(headOf().getAttribute('data-head-nav')).toBe('crumbs'));
 
-    expect(titleRowLabels()).toEqual(['New']);
+    expect(titleRowLabels()).toEqual(['New', 'Close session']);
   });
 
   it('replaces the tabs with Session, Artifacts and the item on an artifact', async () => {
@@ -313,5 +313,26 @@ describe('the session head', () => {
       agentId: null,
     });
     await waitFor(() => expect(headOf().getAttribute('data-head-nav')).toBe('tabs'));
+  });
+
+  it('closes the session to Home with the Close button, which names ⌘W', async () => {
+    go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID }) });
+    renderWorkspace();
+    const close = await screen.findByRole('button', { name: 'Close session' });
+
+    fireEvent.click(close);
+
+    expect(captureLocation({ state: useAppStore.getState() }).place).toEqual({ at: 'home' });
+    expect(useAppStore.getState().currentSessionId).toBeNull();
+  });
+
+  it('leaves the session where it is when Esc is pressed on a tab', async () => {
+    go({ to: sessionPlace({ sessionId: FLOW_SESSION_ID }) });
+    renderWorkspace();
+    await screen.findByRole('button', { name: 'Close session' });
+
+    act(() => escapeLadder({}));
+
+    expect(captureLocation({ state: useAppStore.getState() }).place.at).toBe('session');
   });
 });

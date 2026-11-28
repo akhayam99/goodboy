@@ -14,6 +14,7 @@ export const DECIDE_KINDS = [
   'stopAgentTree',
   'sendToAgent',
   'answerSlackReply',
+  'decideProposal',
 ] as const satisfies ReadonlyArray<MobileAction['kind']>;
 
 export type DecideKind = (typeof DECIDE_KINDS)[number];

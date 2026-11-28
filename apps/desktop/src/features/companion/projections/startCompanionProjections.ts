@@ -20,6 +20,24 @@ export const PUBLISH_DEBOUNCE_MS = 400;
 export const HEARTBEAT_MS = 4000;
 export const OTHERS_REFRESH_MS = 20000;
 
+type ChatsParams = {
+  readonly scope: WorkspaceScope;
+  readonly state: ReturnType<typeof useAppStore.getState>;
+};
+
+const liveChatsOf = ({ scope, state }: ChatsParams): WorkspaceScope => {
+  const chats = state.chatsByWorkspace[scope.workspace.id];
+  return chats === undefined
+    ? scope
+    : {
+        ...scope,
+        chats,
+        busyChatIds: chats
+          .filter((chat) => state.chatStreams[chat.id] !== undefined)
+          .map((chat) => chat.id),
+      };
+};
+
 export const startCompanionProjections = async (): Promise<UnlistenFn> => {
   if (!isTauriRuntime() || !isMainWindow()) {
     return () => undefined;
@@ -42,7 +60,9 @@ export const startCompanionProjections = async (): Promise<UnlistenFn> => {
     const currentId = current.id;
     return [
       scopeOfState({ workspace: current, state, sessions: state.sessions, isFullyLoaded: true }),
-      ...others.filter((scope) => scope.workspace.id !== currentId),
+      ...others
+        .filter((scope) => scope.workspace.id !== currentId)
+        .map((scope) => liveChatsOf({ scope, state })),
     ];
   };
 
@@ -61,6 +81,7 @@ export const startCompanionProjections = async (): Promise<UnlistenFn> => {
       preloadChats({ state });
       const drafts = projectionFieldsOf({
         scopes: scopesNow(),
+        workspaces: state.workspaces,
         detailWorkspaceId: state.currentWorkspaceId,
         chips: chipsOfState({ state, now }),
         now,

@@ -282,7 +282,6 @@ pub fn run() {
         .manage(dropped_paths::DroppedPaths::default())
         .manage(window_close::CloseClaims::default())
         .manage(window_heartbeat::Heartbeats::default())
-        .manage(window_heartbeat::DeskHolders::default())
         .manage(browser::BrowserRegistry::default())
         .manage(browser::BrowserFavicons::default())
         .manage(browser::PageKeys::default())
@@ -581,9 +580,6 @@ pub fn run() {
             overlap::overlap_read,
             window_close::window_close_claim,
             window_heartbeat::window_heartbeat,
-            window_heartbeat::desk_holder,
-            window_heartbeat::desk_hold,
-            window_heartbeat::desk_release,
             turn::turn_delivery_lookup,
             chat::chat_turn,
             chat::chat_cancel,

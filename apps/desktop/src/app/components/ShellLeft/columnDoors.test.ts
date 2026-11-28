@@ -25,6 +25,7 @@ describe('the column doors', () => {
 
   it('lists the seven places, no tool, no Monitoring and no Work door', () => {
     expect(COLUMN_DOORS.map((entry) => entry.label)).toEqual([
+      'Home',
       'Board',
       'Tasks',
       'Workflows',
@@ -44,6 +45,7 @@ describe('the column doors', () => {
 
   it('gives Connections the short rail word Connect and keeps every other word the label', () => {
     expect(COLUMN_DOORS.map((entry) => entry.word ?? entry.label)).toEqual([
+      'Home',
       'Board',
       'Tasks',
       'Workflows',

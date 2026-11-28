@@ -252,7 +252,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Places rail',
-        desc: 'The workspace mark, New session, Board, Tasks, Workflows, Chat, Calendar, Connections (Connect on the rail) and Impact. Settings and the bug icon sit at the foot, with the Goodboy mark under them. An amber number on Board says sessions need you; Monitor on the right rail says when a pinned port is down.',
+        desc: 'The workspace mark, New session, Home, Board, Tasks, Workflows, Chat, Calendar, Connections (Connect on the rail) and Impact. Settings and the bug icon sit at the foot, with the Goodboy mark under them. An amber number on Board says sessions need you; Monitor on the right rail says when a pinned port is down.',
       },
       {
         term: 'Sessions',

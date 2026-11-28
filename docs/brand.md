@@ -50,7 +50,7 @@ The app draws the mark as the same black tile in four places, all through
 
 - the rail signature, 32px at the foot of the places rail;
 - the boot splash, 84px, drawn by `BootBrand`;
-- the launcher on Home, 40px;
+- the launcher on Workspaces, 40px;
 - the setup header, 24px.
 
 It never turns into a bare glyph. Empty states inside a workspace and agent
@@ -108,7 +108,7 @@ no outline to rescue it. The top bar and the sidebar draw no mark. Where it
 sits and what it opens (What's new) is
 [navigation/shell.md → The rail foot](./navigation/shell.md#the-rail-foot).
 
-The setup header and Home are not working chrome: they sit alone on the
+The setup header and Workspaces are not working chrome: they sit alone on the
 background, where the tile reads as the app icon, and they keep the same tile.
 On the site, the favicon and the dock the tile stands alone.
 `brand-mark-is-centered-in-its-tile.test.ts` checks the centring and the tile

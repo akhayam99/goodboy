@@ -1,15 +1,14 @@
 import type { RefObject } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore, type SessionFace } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import { useRowFocusKeys } from '../../../../shared/hooks/useRowFocusKeys';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import type { OverviewMoves } from '../../central/next/overviewMovesOf';
 import type { ActionCardActions } from '../../central/next/useActionCardActions';
-import { isFaceShown } from '../../desk/isFaceShown';
+import { isOverviewShown } from '../../isOverviewShown';
 
 type Params = {
   readonly sessionId: SessionId;
-  readonly face: SessionFace;
   readonly containerRef: RefObject<HTMLElement | null>;
   readonly moves: OverviewMoves;
   readonly actionsFor: ActionCardActions['actionsFor'];
@@ -43,11 +42,8 @@ const moveInFrontOf = ({ container }: ContainerParams): Element | null => {
   return isIdle() ? container.querySelector(MOVE_IN_FRONT) : null;
 };
 
-export const useMoveKeys = ({ sessionId, face, containerRef, moves, actionsFor }: Params): void => {
-  const isShown = useAppStore(
-    (state) =>
-      isFaceShown({ state, sessionId }) && (state.sessionFace[sessionId] ?? 'overview') === face,
-  );
+export const useMoveKeys = ({ sessionId, containerRef, moves, actionsFor }: Params): void => {
+  const isShown = useAppStore((state) => isOverviewShown({ state, sessionId }));
   useRowFocusKeys({ containerRef, rowSelector: MOVE_VERB });
 
   useShortcut(

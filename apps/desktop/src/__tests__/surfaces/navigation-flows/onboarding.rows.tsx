@@ -2,6 +2,7 @@ import { expect } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getSetting } from '@goodboy/db';
+import { BOARD_PLACE } from '../../../store/slices/navigation/place';
 import { storySpies, storySqlite } from '../../../store/storyHarness';
 import { type Row, WAIT, click, heading, settle, useAppStore, visible } from './harness';
 import { CLONED_FOLDER, LEDGER_CORE_FOLDER } from './onboarding.fixtures';
@@ -188,6 +189,7 @@ export const ONBOARDING_ROWS: ReadonlyArray<Row> = [
       await closed();
     },
     lands: async () => {
+      useAppStore.getState().navigate({ to: BOARD_PLACE });
       const setup = within(await screen.findByRole('region', { name: 'Setup' }));
       expect(setup.getByText('Setup · 2 of 3')).toBeDefined();
       expect(setup.getAllByRole('listitem')).toHaveLength(2);

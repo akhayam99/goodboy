@@ -85,7 +85,7 @@ describe('the u44 branch runs linked scene', () => {
     await mount();
 
     const facts = document.querySelector('[data-board-row] [data-board-facts]');
-    expect(facts?.textContent).toBe('1 run');
+    expect(facts?.textContent).toBe('Running · 1 run');
     expect(document.querySelector('[data-slot="branch-work"]')).toBeNull();
   });
 });

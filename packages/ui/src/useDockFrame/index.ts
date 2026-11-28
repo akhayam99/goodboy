@@ -31,7 +31,6 @@ type Params = {
   readonly previewDetail: Preview;
   readonly solve: (params: DockSolveParams) => SolvedDockFrame;
   readonly resizeLabel: string;
-  readonly isLane?: boolean;
 };
 
 type DockFrame = {
@@ -76,7 +75,6 @@ export const useDockFrame = ({
   previewDetail,
   solve,
   resizeLabel,
-  isLane = false,
 }: Params): DockFrame => {
   const cells = dockGrid?.columns.flat() ?? [];
   const isOpen = hasDrawer || cells.length > 0;
@@ -109,7 +107,6 @@ export const useDockFrame = ({
     previewDock,
     solve,
     resizeLabel,
-    isLane,
   });
   const layout = grid.frame.pair;
   const isFocusShown = grid.cellCount + (isDetailShown ? 1 : 0) > 1;

@@ -7,7 +7,7 @@
 - The 40px band holds `‹ Back to app` with its Esc hint and no crumb; its segments
   are in [trails.md](trails.md#studio-trails).
 - `SettingsScopesLayout` draws a `StudioRailLayout` named Settings scopes
-  (`placement="page"` beside the column, `chrome` on Home): the fold control and
+  (`placement="page"` beside the column, `chrome` on Workspaces): the fold control and
   `Search settings` in its first row, the groups or matching settings under it,
   the page as the detail (`data-settings-detail`).
 - The rail folds like every page rail (`goodboy:studio-rail-folded:settings:v1`)
@@ -179,7 +179,7 @@ GitHub` through the first lap's form (`PublishPanel`). Creating a workspace neve
   cap (`folderHistorySize`) with Review in Storage, or a failed first copy with
   Retry.
 - Every window rereads the faces on focus (`useFolderFacesOnFocus`, in the top bar
-  watch and on Home).
+  watch and on Workspaces).
 
 ## Rows, Restore defaults and Copy from
 

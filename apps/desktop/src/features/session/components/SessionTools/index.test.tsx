@@ -103,7 +103,7 @@ describe('SessionTools', () => {
     expect(source).toContain('[@media(max-height:480px)]:hidden');
   });
 
-  it('is the same rail outside a session, with Scripts and Ask waiting for one', () => {
+  it('is the same rail outside a session, every tool ready', () => {
     render(<SessionTools sessionId={null} />);
     const toolbar = screen.getByRole('toolbar', { name: 'Tools' });
     expect(
@@ -117,11 +117,20 @@ describe('SessionTools', () => {
       'pane-toggle-ask',
       'pane-toggle-monitoring',
     ]);
-    expect(toggle('scripts').getAttribute('aria-disabled')).toBe('true');
-    expect(toggle('ask').getAttribute('aria-label')).toBe('Ask, open a session first');
+    expect(toggle('scripts').getAttribute('aria-disabled')).toBeNull();
+    expect(toggle('ask').getAttribute('aria-disabled')).toBeNull();
     expect(toggle('monitoring').getAttribute('aria-disabled')).toBeNull();
-    fireEvent.click(toggle('scripts'));
     fireEvent.click(toggle('ask'));
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'ask', sessionId: null });
+  });
+
+  it('opens Scripts with no session and closes it on a second press', () => {
+    render(<SessionTools sessionId={null} />);
+
+    fireEvent.click(toggle('scripts'));
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'scripts', sessionId: null });
+
+    fireEvent.click(toggle('scripts'));
     expect(drawerKind()).toBeNull();
   });
 

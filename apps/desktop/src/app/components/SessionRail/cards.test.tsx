@@ -61,6 +61,7 @@ beforeEach(async () => {
 afterEach(cleanup);
 
 const actions = (): ColumnActions => ({
+  openHome: vi.fn(),
   openBoard: vi.fn(),
   openInbox: vi.fn(),
   openChat: vi.fn(),

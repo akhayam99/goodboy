@@ -11,6 +11,7 @@ export const FRAME_PAGE_HEADER_INSET_PX = 8;
 export const SHELL_GUTTER_PX = 12;
 
 export const FRAME_PAGES = [
+  'home',
   'board',
   'terminal',
   'browser',
@@ -54,6 +55,7 @@ export const FRAME_TYPES = ['column', 'reader', 'stage', 'split'] as const;
 export type FrameType = (typeof FRAME_TYPES)[number];
 
 export const PAGE_FRAME: Readonly<Record<FramePage, FrameType>> = {
+  home: 'column',
   overview: 'column',
   activity: 'column',
   runs: 'column',
@@ -128,6 +130,7 @@ type FramePageParams = {
 };
 
 export const PAGE_MEASURE: Readonly<Record<FramePage, PageColumnWidth>> = {
+  home: 'column',
   overview: 'column',
   activity: 'column',
   runs: 'column',

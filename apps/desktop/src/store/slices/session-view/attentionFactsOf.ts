@@ -1,10 +1,19 @@
 import type { PullRequestState, Session, SessionAttentionReason } from '@goodboy/types';
+import { isFailureSettled } from '@goodboy/core/attention';
 import { isPullRequestApproved } from './pullRequestGroup';
 
 export type StagePullRequest = Pick<
   PullRequestState,
   'number' | 'state' | 'isDraft' | 'checks' | 'reviewDecision'
 >;
+
+export type SettleFacts = Readonly<{
+  isSettled: boolean;
+  settledAt: number | null;
+  isRunLive: boolean;
+  unreadAt: number | null;
+  stoppedRunAt: number | null;
+}>;
 
 export type AttentionFactsParams = {
   readonly session: Session;
@@ -26,6 +35,8 @@ export type AttentionFactsParams = {
   readonly hasAutoFailed?: boolean;
   readonly hasSlackReplyWaiting?: boolean;
   readonly deferredReasons?: ReadonlySet<SessionAttentionReason>;
+  readonly isFailureEnded?: boolean;
+  readonly settle?: SettleFacts | (() => SettleFacts);
 };
 
 const ATTENTION_PRIORITY: ReadonlyArray<SessionAttentionReason> = [
@@ -59,6 +70,14 @@ const HUMAN_INPUT_REASONS: ReadonlyArray<SessionAttentionReason> = [
   'run-paused-at-limit',
 ];
 
+const RUN_BOUND_REASONS: ReadonlyArray<SessionAttentionReason> = [
+  'needs-approval',
+  'plan-approval',
+  'run-waits-for-go',
+  'run-paused-at-limit',
+  'auto-needs-you',
+];
+
 const ERROR_REASONS: ReadonlyArray<SessionAttentionReason> = ['agent-error', 'run-stopped'];
 
 type ReasonParams = {
@@ -70,12 +89,41 @@ export const isHumanInputReason = ({ reason }: ReasonParams): boolean =>
 
 export const isErrorReason = ({ reason }: ReasonParams): boolean => ERROR_REASONS.includes(reason);
 
+type SettleDropParams = {
+  readonly reason: SessionAttentionReason;
+  readonly settleOf: () => SettleFacts;
+};
+
+const isDroppedBySettle = ({ reason, settleOf }: SettleDropParams): boolean => {
+  const isRunBound = RUN_BOUND_REASONS.includes(reason);
+  if (!isRunBound && reason !== 'run-stopped' && reason !== 'unread-reply') {
+    return false;
+  }
+  const settle = settleOf();
+  if (!settle.isSettled) {
+    return false;
+  }
+  if (isRunBound) {
+    return !settle.isRunLive;
+  }
+  const subjectAt = reason === 'run-stopped' ? settle.stoppedRunAt : settle.unreadAt;
+  return subjectAt !== null && isFailureSettled({ at: subjectAt, settledAt: settle.settledAt });
+};
+
 const isPrLive = (pr: StagePullRequest | null): pr is StagePullRequest =>
   pr !== null && pr.state !== 'merged' && pr.state !== 'closed';
 
 const NO_REASONS: ReadonlyArray<SessionAttentionReason> = [];
 
 const NO_DEFERRALS: ReadonlySet<SessionAttentionReason> = new Set();
+
+const NOT_SETTLED: SettleFacts = {
+  isSettled: false,
+  settledAt: null,
+  isRunLive: false,
+  unreadAt: null,
+  stoppedRunAt: null,
+};
 
 const interned = new Map<string, ReadonlyArray<SessionAttentionReason>>();
 
@@ -116,12 +164,19 @@ export const attentionFactsOf = ({
   hasAutoFailed = false,
   hasSlackReplyWaiting = false,
   deferredReasons = NO_DEFERRALS,
+  isFailureEnded = false,
+  settle = NOT_SETTLED,
 }: AttentionFactsParams): ReadonlyArray<SessionAttentionReason> => {
   const isOnBranch = !isBranchless;
+  let known: SettleFacts | null = null;
+  const settleOf = (): SettleFacts => {
+    known ??= typeof settle === 'function' ? settle() : settle;
+    return known;
+  };
   const livePr = isOnBranch && isPrLive(pr) ? pr : null;
   const holds: Record<SessionAttentionReason, boolean> = {
     'needs-approval': hasBlockedAgent,
-    'agent-error': session.state.kind === 'error' || hasAutoFailed,
+    'agent-error': (session.state.kind === 'error' && !isFailureEnded) || hasAutoFailed,
     'push-failed': isOnBranch && pushFailedCount > 0,
     'plan-approval': hasPlanWaiting,
     'open-question': openQuestionCount > 0,
@@ -141,7 +196,9 @@ export const attentionFactsOf = ({
   return internReasons({
     reasons: ATTENTION_PRIORITY.filter(
       (reason) =>
-        holds[reason] && !(deferredReasons.has(reason) && !isHumanInputReason({ reason })),
+        holds[reason] &&
+        !(deferredReasons.has(reason) && !isHumanInputReason({ reason })) &&
+        !isDroppedBySettle({ reason, settleOf }),
     ),
   });
 };

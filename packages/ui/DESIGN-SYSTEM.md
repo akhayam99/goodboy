@@ -1264,7 +1264,7 @@ the Tailwind name `animate-pulse` (`--animate-pulse` points at it), so the
 app has one breathing animation, not two: a loading skeleton and a running
 sign share the same period and dip, and the surface they sit on says which
 one it is. Transition keyframes (`reveal-fade`, `fade-in`, `history-arrive`,
-`nav-step-in`, `nav-step-in-back`, `pane-in`, `pane-out`, `face-in`, `face-out`, `item-out`, `studio-in`, `studio-out`, `studio-body-in`,
+`nav-step-in`, `nav-step-in-back`, `pane-in`, `pane-out`, `item-out`, `studio-in`, `studio-out`, `studio-body-in`,
 `layer-in`, `layer-out`, `drawer-fade-out`, `drawer-overlay-in`,
 `drawer-overlay-out`, `drawer-dock-in`, `drawer-dock-out`, `drawer-swap`, `trail-crumb-in`, `crumb-menu-in`,
 `popover-in`, `fold-fade-in`, `fold-fade-out`, `wizard-fade-in`,
@@ -1272,17 +1272,6 @@ one it is. Transition keyframes (`reveal-fade`, `fade-in`, `history-arrive`,
 states and sit outside the meanings.
 `motion-registry.test.ts` fails on a `@keyframes` in `styles.css` that this
 section does not name, and on a name here that `styles.css` does not define.
-
-**The face swap.** Overview and Desk trade places through `PaneSwap` with
-`motion="face"`, and nothing else in the session moves. The face that leaves
-fades on `face-out` (`--duration-quick`, opacity only). Then the face that
-arrives slides on `face-in`: opacity and `translateX` from 16px to 0 over
-`--duration-slow`, after one `--duration-quick`. An arriving face that marks
-its parts with `data-face-part` (the Desk column, then its grid) moves them
-one `--delay-step` apart instead of moving as one block. For the whole move
-`PaneSwap` sets `FACE_SWAP_ATTRIBUTE` on `<body>`, so a native web page stays
-covered and is placed once when the move ends. Under reduced motion the face
-cuts in place.
 
 **HeightMotion.** A closed `HeightMotion` slot may cancel its parent's gap with
 an animated negative top margin equal to that gap (`parentGapRem`), so a
@@ -1306,8 +1295,7 @@ Reduced motion swaps in place at the same times.
 (60ms). Four values sit outside the scale on purpose: the three loop periods
 `--loop-pulse`, `--loop-spin` and `--loop-shimmer`, and `--hold-history-arrive`
 (the 1.4s fade of a landed history row). The fold and level timers are
-`DURATION_BASE_MS`, `DRAWER_EXIT_MS` is `DURATION_QUICK_MS` and the stagger is
-`DELAY_STEP_MS`, in
+`DURATION_BASE_MS`, `DRAWER_EXIT_MS` is `DURATION_QUICK_MS`, in
 `packages/ui/src/motionTimings.ts`; `motion-registry.test.ts` pins each constant
 to its token. A literal duration or `cubic-bezier` in `styles.css` outside the
 token block fails the same test.

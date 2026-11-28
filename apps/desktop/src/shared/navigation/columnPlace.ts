@@ -20,15 +20,24 @@ export type ColumnPlace =
 type Params = {
   readonly hasSession: boolean;
   readonly isDraftShown: boolean;
+  readonly isHomeShown: boolean;
   readonly studio: StudioKind | null;
 };
 
-export const columnPlaceOf = ({ hasSession, isDraftShown, studio }: Params): ColumnPlace => {
+export const columnPlaceOf = ({
+  hasSession,
+  isDraftShown,
+  isHomeShown,
+  studio,
+}: Params): ColumnPlace => {
   if (studio !== null) {
     return studioPlaceOf({ studio });
   }
   if (isDraftShown) {
     return 'new';
+  }
+  if (isHomeShown) {
+    return 'home';
   }
   return hasSession ? null : 'board';
 };

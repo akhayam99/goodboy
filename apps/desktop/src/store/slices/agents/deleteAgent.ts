@@ -4,7 +4,7 @@ import { purgeAgentForDelete, updateSessionState } from '@goodboy/db';
 import { removeQuestionsFromSlot } from '@goodboy/core/context';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
-import { deriveSessionState, purgedAgentIds } from '../sessions/sessionMutators';
+import { deriveSessionState, entriesOf, purgedAgentIds } from '../sessions/sessionMutators';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { storedAgentDraft } from './storedAgentDraft';
 import { stopAgentForDelete } from './stopAgentForDelete';
@@ -68,10 +68,11 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
     storedAgentDraft.forget({ agentIds: [agentId] });
     set((s) => {
       const cleared = omitDeletedAgents({ state: s, sessionId, agentIds: new Set([agentId]) });
-      const survivorStates = refreshed
-        .map((a) => cleared.agentTurnState[a.id])
-        .filter((st): st is NonNullable<typeof st> => st !== undefined);
-      derived = deriveSessionState(survivorStates, new Date().toISOString() as IsoDateTime);
+      derived = deriveSessionState({
+        entries: entriesOf({ ids: refreshed.map((a) => a.id), turns: cleared.agentTurnState }),
+        agents: refreshed,
+        now: new Date().toISOString() as IsoDateTime,
+      });
       return {
         ...cleared,
         sessionPhaseRuns: { ...s.sessionPhaseRuns, [sessionId]: refreshed },
