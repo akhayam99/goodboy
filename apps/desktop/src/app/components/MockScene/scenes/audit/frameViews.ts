@@ -1,5 +1,4 @@
 import type { useAppOverlays } from '../../../../hooks/useAppOverlays';
-import { openConnection } from '../../../../../features/connections/openConnection';
 import { openSettings } from '../../../../../features/settings/openSettings';
 import { dispatchWindowEvent } from '../../../../../shared/lib/dispatchWindowEvent';
 import { useAppStore } from '../../../../../store';
@@ -19,9 +18,6 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
       return;
     case 'settings-workspace':
       openSettings({ scope: 'workspace' });
-      return;
-    case 'connection-linear':
-      openConnection({ focus: { kind: 'tool', tool: 'linear' } });
       return;
     case 'settings-providers':
     case 'settings-tools':

@@ -1,3 +1,4 @@
+import type { InvokeArgs } from '@tauri-apps/api/core';
 import { mockWindows } from '@tauri-apps/api/mocks';
 import {
   brandId,
@@ -239,10 +240,16 @@ const SEEDED: Readonly<Record<WizardSceneWorkspace, Seeded>> = {
   folder: { workspace: ACME_DOCS, folders: [ACME_DOCS_FOLDER] },
 };
 
+type AnswerParams = {
+  readonly command: string;
+  readonly payload: InvokeArgs | undefined;
+};
+
 type SeedParams = AgentsParams & {
   readonly ws: WizardSceneWorkspace;
   readonly hasLinear: boolean;
   readonly hasGithub?: boolean;
+  readonly answer?: (params: AnswerParams) => unknown;
 };
 
 const WITH_GITHUB = {
@@ -262,28 +269,29 @@ const WITHOUT_GITHUB = {
   }) satisfies AppStore['refreshGithubConnection'],
 } satisfies Partial<AppStore>;
 
+const wizardAnswer = ({ command, payload }: AnswerParams): unknown => {
+  switch (command) {
+    case 'worktree_remote_url':
+      return 'git@github.com:harborline/payments-api.git';
+    case 'linear_fetch_assigned_issues':
+      return storyIssuesOf();
+    default:
+      return setupSceneAnswer({ command, payload });
+  }
+};
+
 export const seedWizardScene = ({
   agents,
   ws,
   hasLinear,
   hasGithub = true,
+  answer = wizardAnswer,
 }: SeedParams): Seeded => {
   sampleScoutRuns.cancel();
   const detected = agentsFor({ agents });
   const seeded = SEEDED[ws];
   const { workspace } = seeded;
-  installSceneDatabase({
-    fallback: ({ command, payload }) => {
-      switch (command) {
-        case 'worktree_remote_url':
-          return 'git@github.com:harborline/payments-api.git';
-        case 'linear_fetch_assigned_issues':
-          return storyIssuesOf();
-        default:
-          return setupSceneAnswer({ command, payload });
-      }
-    },
-  });
+  installSceneDatabase({ fallback: answer });
   mockWindows('main');
   useAppStore.setState({
     hydrated: true,

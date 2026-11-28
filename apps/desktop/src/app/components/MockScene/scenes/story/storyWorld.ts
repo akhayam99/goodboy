@@ -32,7 +32,7 @@ import {
 } from '../u24/autoSceneSeed';
 import { STORY_ISSUE, STORY_PLANNER, STORY_QUESTION } from './storyContent';
 
-export type StoryStage = 'bring' | 'asking';
+export type StoryStage = 'tasks' | 'asking';
 
 export const STORY_SESSION_ID = AUTO_SESSION.id;
 export const STORY_PLANNER_ID = PLANNER_ID;
@@ -333,10 +333,7 @@ export const seedStoryWorld = ({ stage }: SeedParams): void => {
       workspace === undefined
         ? {}
         : {
-            [workspace.id]: storyBindingsOf({
-              workspaceId: workspace.id,
-              hasLinear: stage !== 'bring',
-            }),
+            [workspace.id]: storyBindingsOf({ workspaceId: workspace.id }),
           },
     projectSentryLinks: workspace === undefined ? {} : { [workspace.id]: [] },
     loadProjectSentryLinks: async () => undefined,

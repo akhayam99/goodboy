@@ -57,6 +57,7 @@ export type DemoHint = {
   readonly offer?: HintOffer;
   readonly focus?: HintAnchor;
   readonly side?: HintSide;
+  readonly compactSide?: HintSide;
   readonly isSideLocked?: boolean;
   readonly align?: HintAlign;
   readonly dwellMs?: number;

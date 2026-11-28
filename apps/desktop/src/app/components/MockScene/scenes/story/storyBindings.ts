@@ -28,13 +28,9 @@ const baseOf = ({ workspaceId, tool }: BaseParams) => {
 
 type Params = {
   readonly workspaceId: WorkspaceId;
-  readonly hasLinear: boolean;
 };
 
-export const storyBindingsOf = ({
-  workspaceId,
-  hasLinear,
-}: Params): ReadonlyArray<IntegrationBinding> => [
+export const storyBindingsOf = ({ workspaceId }: Params): ReadonlyArray<IntegrationBinding> => [
   {
     ...baseOf({ workspaceId, tool: 'gitlab' }),
     provider: 'gitlab',
@@ -65,5 +61,5 @@ export const storyBindingsOf = ({
       signature: { agents: true, own: false, text: '' },
     },
   },
-  ...(hasLinear ? [linearBindingOf({ workspaceId })] : []),
+  linearBindingOf({ workspaceId }),
 ];

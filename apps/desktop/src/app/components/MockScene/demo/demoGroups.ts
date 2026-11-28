@@ -9,8 +9,8 @@ export const DEMO_GROUPS = {
   bring: {
     id: 'bring',
     title: 'Bring your work',
-    line: 'Connect Linear, pick a task and hand it to your agents',
-    outro: 'Linear is connected, and HBL-412 is with your agents in Harborline.',
+    line: 'Set up Goodboy, connect Linear and hand a task to your agents',
+    outro: 'Harborline is set up with Linear connected, and HBL-412 is with your agents.',
   },
   direction: {
     id: 'direction',
