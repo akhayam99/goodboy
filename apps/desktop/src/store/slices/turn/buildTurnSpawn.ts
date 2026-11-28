@@ -17,6 +17,7 @@ import {
 } from './sessionLanguage';
 import { beginTurnFileVersionCapture } from '../file-versions/captureTurnFileVersions';
 import { applyHeuristicTitle } from './applyHeuristicTitle';
+import { loadPreferredLanguage } from '../settings/loadPreferredLanguage';
 import { fanOutChildKind } from '../agents/fanOutChildKind';
 import { resolveCandidateMode } from '../resolve/resolveCandidateMode';
 import { resumableResolveThreadIds } from '../resolve/resumableResolveThreadIds';
@@ -152,6 +153,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       ? undefined
       : resumeSessionIdOf({ origin, agent: agentRowEarly, provider });
 
+  const preferredLanguage = await loadPreferredLanguage({ get, workspaceId: session.workspaceId });
   const anchorText = get().sessionLanguageAnchor[sessionId] ?? '';
   const languageAnchor: SessionLanguageAnchor =
     anchorText.length > 0
@@ -178,6 +180,7 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
           sessionId,
           agentId: activeAgentId,
           languageAnchor: languageAnchor.text,
+          preferredLanguage,
         })
       : AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
@@ -231,7 +234,10 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       !isReadOnlyAnswer &&
       (inPlaceFolders.length === 0 || hasFolderLease),
   });
-  const languageGuard = buildSessionLanguageGuard({ anchor: languageAnchor });
+  const languageGuard = buildSessionLanguageGuard({
+    anchor: languageAnchor,
+    preferred: preferredLanguage,
+  });
   const githubMode = get().githubStatus?.mode;
   const isGithubConnected = githubMode === 'pat' || githubMode === 'gh-cli';
   const integrationsGuard = buildIntegrationsGuard({
@@ -317,7 +323,14 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
       agentKindOverride: get().agentKindOverride,
     }) !== null;
   if (isFirstTurn && !isChildOfFanOut) {
-    void applyHeuristicTitle({ set, get, sessionId, agentId: activeAgentId, prompt: content });
+    void applyHeuristicTitle({
+      set,
+      get,
+      sessionId,
+      agentId: activeAgentId,
+      prompt: content,
+      preferredLanguage,
+    });
   }
 
   const turnSpanBase: Omit<AgentTurnSpan, 'endedAt' | 'endReason' | 'touchedMountIds'> = {

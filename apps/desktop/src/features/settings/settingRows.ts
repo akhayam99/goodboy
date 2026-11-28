@@ -289,6 +289,13 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     formerNames: ['Verbosity'],
   }),
   row({
+    key: 'preferred-language',
+    label: 'Preferred language',
+    help: 'The language agents answer in. Auto follows the language you write in.',
+    page: EVERY_RUN,
+    band: 'Agents',
+  }),
+  row({
     key: 'stops-for-ok',
     label: STOPS_LEVEL_COPY.label,
     help: STOPS_LEVEL_COPY.help,

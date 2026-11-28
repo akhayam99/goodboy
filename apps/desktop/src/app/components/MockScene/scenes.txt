@@ -523,6 +523,9 @@ drawer-split-plan
 drawer-split-plan-1280
 drawer-split-tasks
 drawer-wide-push
+every-run-preferred-language-auto-light
+every-run-preferred-language-italian-dark
+every-run-preferred-language-italian-light
 f58-chat-1100
 f58-chat-origin
 f58-chat-room

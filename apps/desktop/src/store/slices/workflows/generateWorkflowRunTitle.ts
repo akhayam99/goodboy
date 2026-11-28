@@ -2,21 +2,27 @@ import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import { devWarn } from '@goodboy/core/dev-log';
 import { formatError } from '@goodboy/ui';
+import type { PreferredLanguage } from '@goodboy/core/language';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
 import { updateGeneratedWorkflowRunTitle } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { generateTitleText } from './generateTitleText';
-import { TITLE_REPLY_RULES } from '../turn/applyHeuristicTitle/titleReplyRules';
+import { titleReplyRulesOf } from '../turn/applyHeuristicTitle/titleReplyRules';
+import { loadPreferredLanguage } from '../settings/loadPreferredLanguage';
 import { patchWorkflowRun } from './patchWorkflowRun';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
-const WORKFLOW_RUN_TITLE_SYSTEM_PROMPT = [
-  'Write one short title for the workflow run whose goal is described below.',
-  'Name the work, not the workflow: never start with the workflow kind.',
-  TITLE_REPLY_RULES,
-].join(' ');
+type SystemPromptParams = {
+  readonly preferred: PreferredLanguage | null;
+};
+
+const workflowRunTitleSystemPromptOf = ({ preferred }: SystemPromptParams): string =>
+  [
+    'Write one short title for the workflow run whose goal is described below.',
+    'Name the work, not the workflow: never start with the workflow kind.',
+    titleReplyRulesOf({ preferred }),
+  ].join(' ');
 
 type Params = {
   readonly set: SetFn;
@@ -44,7 +50,7 @@ export const generateWorkflowRunTitle = async ({
     if (prompt.length === 0) {
       return;
     }
-    const settings = selectResolvedSettings({ state: get(), sessionId });
+    const preferred = await loadPreferredLanguage({ get, workspaceId: session.workspaceId });
     const taskModel = selectTaskModel({ state: get(), sessionId, task: 'agent_naming' });
     const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
     const chain = await runHelperTask({
@@ -55,7 +61,8 @@ export const generateWorkflowRunTitle = async ({
       run: (model) =>
         generateTitleText({
           prompt,
-          systemPrompt: WORKFLOW_RUN_TITLE_SYSTEM_PROMPT,
+          systemPrompt: workflowRunTitleSystemPromptOf({ preferred }),
+          preferred,
           ...model,
           ...(worktreePath != null && { workingDir: worktreePath }),
         }),

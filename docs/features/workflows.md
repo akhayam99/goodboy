@@ -152,7 +152,7 @@ Two steps in a row that do not finish stop the run at any level, and it asks. Th
 Set what every new run starts with on the **Every run** tab of Workflows, between **Workflows** and **Saved steps**. It is the one home of these rows: Settings has no Runs page, and its last row, **Run defaults are in Workflows**, opens this tab.
 
 - **Edits** sets the mode new sessions start in.
-- **Agents** holds the models and **Reply length**. **Runs** holds the Lead, and **Roles** holds each role.
+- **Agents** holds the models, **Reply length** and **Preferred language**. **Runs** holds the Lead, and **Roles** holds each role.
 - **Older plan runs** holds the Orchestrator and **Models in older plan runs**, while the workspace has a plan run that is not discarded.
 - **When a run stops for you** holds **Stops for your OK**, one level for workflows and the Lead.
 - **Spending** holds the **Limit** with **Pause** or **Warn only**.

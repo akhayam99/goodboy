@@ -1,3 +1,4 @@
+import { preferredLanguageName, type PreferredLanguage } from '@goodboy/core/language';
 import type { ChatMessage, ChatSummary, EffortLevel } from '@goodboy/types';
 import type { ChatBackend } from './chatBackend';
 import { draftWorkBrief, parseWorkBrief, type WorkBrief } from './workBrief';
@@ -13,11 +14,12 @@ type Params = {
   };
   readonly messages: ReadonlyArray<ChatMessage>;
   readonly projectNames: ReadonlyArray<string>;
+  readonly preferred?: PreferredLanguage | null;
 };
 
-type ProjectsParams = Pick<Params, 'projectNames'>;
+type ProjectsParams = Pick<Params, 'projectNames'> & Pick<Params, 'preferred'>;
 
-const workBriefSystemPrompt = ({ projectNames }: ProjectsParams): string =>
+const workBriefSystemPrompt = ({ projectNames, preferred = null }: ProjectsParams): string =>
   [
     'You turn a conversation about a code workspace into a brief for a coding agent.',
     'Reply with one JSON object and nothing else, with these keys:',
@@ -26,6 +28,11 @@ const workBriefSystemPrompt = ({ projectNames }: ProjectsParams): string =>
     '"know": up to three short facts the chat established.',
     '"files": up to four project-relative paths the chat named, with a line number when it gave one.',
     `"projects": the projects the work touches, an array that may be empty, each one of: ${projectNames.join(', ')}.`,
+    ...(preferred === null
+      ? []
+      : [
+          `Write "title", "goal" and "know" in ${preferredLanguageName({ language: preferred })}. Keep file paths, project names, identifiers and quoted text verbatim.`,
+        ]),
   ].join('\n');
 
 type TranscriptParams = Pick<Params, 'messages'>;
@@ -65,6 +72,7 @@ export const summarizeChatForWork = async ({
   chat,
   messages,
   projectNames,
+  preferred = null,
 }: Params): Promise<WorkBrief> => {
   const fallback = draftWorkBrief({ title: chat.title, messages, projectNames });
   try {
@@ -73,7 +81,7 @@ export const summarizeChatForWork = async ({
         provider: chat.provider,
         model: chat.model,
         ...(chat.effort != null && { effort: chat.effort }),
-        systemPrompt: workBriefSystemPrompt({ projectNames }),
+        systemPrompt: workBriefSystemPrompt({ projectNames, preferred }),
         userMessage: transcriptOf({ messages }),
       }),
     });

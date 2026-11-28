@@ -124,4 +124,37 @@ describe('sessionLanguageTurnRule', () => {
     expect(sessionLanguageTurnRule({ anchorLabel: 'goal', anchorText: '' })).toBe(bare);
     expect(bare.startsWith('Answer in the language that goal is written in')).toBe(true);
   });
+
+  describe('a preferred language in the rules', () => {
+    it('keeps the goal rule untouched on Auto', () => {
+      const base = sessionLanguageRule({ goalLabel: 'the goal', writtenFields: ['reason'] });
+
+      expect(
+        sessionLanguageRule({ goalLabel: 'the goal', writtenFields: ['reason'], preferred: null }),
+      ).toBe(base);
+    });
+
+    it('asks for the set language in the goal rule', () => {
+      const rule = sessionLanguageRule({
+        goalLabel: 'the goal',
+        writtenFields: ['name', 'reason'],
+        preferred: 'it',
+      });
+
+      expect(rule).toContain('chose Italian as the language of this workspace');
+      expect(rule).toContain('Write name and reason in Italian');
+      expect(rule).not.toContain('The session language is the language');
+    });
+
+    it('asks for the set language in the turn rule and beats a Spanish anchor', () => {
+      const rule = sessionLanguageTurnRule({
+        anchorLabel: 'message',
+        anchorText: 'El selector de idioma debe vivir en los ajustes de la sesión',
+        preferred: 'it',
+      });
+
+      expect(rule).toContain('in Italian.');
+      expect(rule).not.toContain('Spanish');
+    });
+  });
 });

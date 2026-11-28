@@ -74,7 +74,15 @@ Italian.") when `detectSessionLanguage` reads one. It scores stopwords for en,
 es, pt, fr and de after cutting code spans, paths and identifiers. Under 3
 words, under 2 hits, under 15% hits or a winner less than 1.5 times the
 runner-up gives no name, and the rule then names no language. The Auto prompt and the orchestrator brief name it the
-same way. The Cursor parser holds a half-read "> Auto routed to ..." line
+same way.
+
+The workspace value `session.language` (**Preferred language**, an ISO code, no row for Auto) wins over detection.
+`resolveSessionLanguage` in `@goodboy/core/language` is the one place that decides: a set language, else the detected
+one, else none. `sessionLanguageTurnRule` and `sessionLanguageRule` render its answer, so the guard, the Auto prompt, the
+title prompts (`titleReplyRulesOf`, checked by `parseGeneratedTitle` against the set language), the Ask system prompt and
+the work brief all read it. `loadPreferredLanguage` reads it for the target workspace of the turn, never the current
+one. The rule never translates the operator's words, code or commit messages. The slot summarizer stays English by
+contract, whatever the language. The Cursor parser holds a half-read "> Auto routed to ..." line
 until it ends and emits it as its own `decision_note`, keeping the text around
 it as it was.
 

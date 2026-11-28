@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage, ChatMessageId, ChatSummary, ProjectId } from '@goodboy/types';
+import { useAppStore } from '../../../../../store';
+import { loadPreferredLanguage } from '../../../../../store/slices/settings/loadPreferredLanguage';
 import { activeChatBackend } from '../../../activeChatBackend';
 import { summarizeChatForWork } from '../../../summarizeChatForWork';
 import type { WorkBrief } from '../../../workBrief';
@@ -71,23 +73,31 @@ export const useWorkBrief = ({
     briefOwner.current = null;
     setBrief(null);
     setProjectIds(null);
-    void summarizeChatForWork({
-      backend: activeChatBackend,
-      chat: {
-        title: chat.title,
-        provider: drafter.provider,
-        model: drafter.model,
-        ...(drafter.effort != null && { effort: drafter.effort }),
-      },
-      messages: upTo({ messages, anchorMessageId }),
-      projectNames,
-    }).then((next) => {
-      if (!isCurrent) {
-        return;
-      }
-      briefOwner.current = { anchorMessageId, drafts };
-      setBrief(next);
-    });
+    void loadPreferredLanguage({
+      get: useAppStore.getState,
+      workspaceId: chat.workspaceId,
+    })
+      .then((preferred) =>
+        summarizeChatForWork({
+          backend: activeChatBackend,
+          chat: {
+            title: chat.title,
+            provider: drafter.provider,
+            model: drafter.model,
+            ...(drafter.effort != null && { effort: drafter.effort }),
+          },
+          messages: upTo({ messages, anchorMessageId }),
+          projectNames,
+          preferred,
+        }),
+      )
+      .then((next) => {
+        if (!isCurrent) {
+          return;
+        }
+        briefOwner.current = { anchorMessageId, drafts };
+        setBrief(next);
+      });
     return () => {
       isCurrent = false;
     };

@@ -69,6 +69,7 @@ beforeEach(async () => {
   });
   useAppStore.setState({
     ...askInitialState,
+    loadWorkspaceValue: async () => null,
     sessions: [session],
     currentSessionId: session.id,
   });

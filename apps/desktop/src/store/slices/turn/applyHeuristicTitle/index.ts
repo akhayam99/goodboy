@@ -3,19 +3,24 @@ import { runHelperTask } from '../../providerLimits/runHelperTask';
 import { invokeCommand } from '../../../../shared/lib/invokeCommand';
 import { getDefaultBinary, runAuxOneShot } from '@goodboy/core/providers';
 import { heuristicAgentTitle, renameSession as renameSessionInDb } from '@goodboy/db';
+import type { PreferredLanguage } from '@goodboy/core/language';
 import type { AgentId, IsoDateTime, SessionId, TaskModelPreference } from '@goodboy/types';
 import { parseGeneratedTitle } from './parseGeneratedTitle';
-import { TITLE_REPLY_RULES } from './titleReplyRules';
+import { titleReplyRulesOf } from './titleReplyRules';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import type { GetFn, SetFn } from '../types';
 import { sessionById } from '../../sessions/sessionIndex';
 
 const TITLE_TIMEOUT_MS = 15_000;
 
-const TITLE_SYSTEM_PROMPT = [
-  'Write one imperative title for the user request below.',
-  TITLE_REPLY_RULES,
-].join(' ');
+type SystemPromptParams = {
+  readonly preferred: PreferredLanguage | null;
+};
+
+const titleSystemPromptOf = ({ preferred }: SystemPromptParams): string =>
+  ['Write one imperative title for the user request below.', titleReplyRulesOf({ preferred })].join(
+    ' ',
+  );
 
 type Params = {
   readonly set: SetFn;
@@ -23,6 +28,7 @@ type Params = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
   readonly prompt: string;
+  readonly preferredLanguage?: PreferredLanguage | null;
 };
 
 type RevertGoalParams = {
@@ -54,11 +60,13 @@ const revertGoalIfStillOptimistic = ({
 type GenerateParams = TaskModelPreference &
   Readonly<{
     prompt: string;
+    preferred: PreferredLanguage | null;
     workingDir?: string;
   }>;
 
 const generateAgentTitle = async ({
   prompt,
+  preferred,
   providerId,
   model,
   effort,
@@ -79,7 +87,7 @@ const generateAgentTitle = async ({
         ...(effort != null && { effort }),
         binary: getDefaultBinary(providerId),
         userMessage: prompt,
-        systemPrompt: TITLE_SYSTEM_PROMPT,
+        systemPrompt: titleSystemPromptOf({ preferred }),
         ...(workingDir != null && { workingDir }),
         invokeFn: invokeCommand,
       }),
@@ -88,7 +96,12 @@ const generateAgentTitle = async ({
     if ((result.exitCode ?? 0) !== 0) {
       throw new Error(result.stderr);
     }
-    const title = parseGeneratedTitle({ providerId, stdout: result.stdout, ask: prompt });
+    const title = parseGeneratedTitle({
+      providerId,
+      stdout: result.stdout,
+      ask: prompt,
+      preferred,
+    });
     if (title.trim() === '') {
       throw new Error('the model returned an empty title');
     }
@@ -106,6 +119,7 @@ export const applyHeuristicTitle = async ({
   sessionId,
   agentId,
   prompt,
+  preferredLanguage = null,
 }: Params): Promise<void> => {
   try {
     const heuristicTitle = heuristicAgentTitle({ prompt });
@@ -179,6 +193,7 @@ export const applyHeuristicTitle = async ({
         run: (model) =>
           generateAgentTitle({
             prompt,
+            preferred: preferredLanguage,
             ...model,
             ...(worktreePath != null && { workingDir: worktreePath }),
           }),

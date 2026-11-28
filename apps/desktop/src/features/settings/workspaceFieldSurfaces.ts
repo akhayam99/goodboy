@@ -1,3 +1,4 @@
+export { PreferredLanguageField } from './components/SettingsStudio/PreferredLanguageField';
 export { RunsAdvancedBand } from './components/SettingsStudio/RunsAdvancedBand';
 export { WorkspaceFieldRow } from './components/SettingsStudio/WorkspaceFieldRow';
 export { useWorkspaceOverrideSave } from './hooks/useWorkspaceOverrideSave';

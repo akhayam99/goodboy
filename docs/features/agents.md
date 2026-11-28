@@ -473,7 +473,7 @@ Let two helpers work on your history and your pull request text without the powe
 
 ### One language per session
 
-Get agents and summaries in the language of your goal.
+Get agents and summaries in the language of your goal. To fix the language instead, pick a **Preferred language** under **Agents** on the **Every run** tab. **Auto** keeps following the language you write in. A chosen language holds for agent replies, session titles, summaries and Ask, and never translates your own words, your code or your commit messages.
 
 ## Under the hood
 

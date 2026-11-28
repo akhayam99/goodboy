@@ -1,5 +1,5 @@
 import type { Agent, Session, SessionId, TurnEvent, Workflow, WorkflowRunId } from '@goodboy/types';
-import { sessionLanguageTurnRule } from '@goodboy/core/language';
+import { sessionLanguageTurnRule, type PreferredLanguage } from '@goodboy/core/language';
 
 const FIRST_MESSAGE_MAX_LENGTH = 280;
 
@@ -92,10 +92,18 @@ export type SessionLanguageAnchor = {
 
 type GuardParams = {
   readonly anchor: SessionLanguageAnchor;
+  readonly preferred?: PreferredLanguage | null;
 };
 
-export const buildSessionLanguageGuard = ({ anchor }: GuardParams): string => {
+export const buildSessionLanguageGuard = ({ anchor, preferred = null }: GuardParams): string => {
   const trimmed = anchor.text.trim();
+  if (preferred !== null) {
+    return [
+      '[session-language]',
+      sessionLanguageTurnRule({ anchorLabel: anchor.source, anchorText: trimmed, preferred }),
+      '[/session-language]',
+    ].join('\n');
+  }
   if (trimmed.length === 0) {
     return '';
   }
