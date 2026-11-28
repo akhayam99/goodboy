@@ -23,10 +23,10 @@ There are two targets, both attached to the same draft release:
   universal `.dmg` with `tauri-action` and creates a **draft** GitHub Release.
   Signing and notarization run on their own from the six `APPLE_*` secrets. If
   those secrets were ever removed, the build would still pass and produce an
-  unsigned `.dmg`. Before bundling, Tauri runs `pnpm build`, which typechecks
-  the app code through `apps/desktop/tsconfig.build.json` (no test files) and
-  then runs `vite build`. The full typecheck, tests included, runs in CI on every
-  pull request.
+  unsigned `.dmg`. Before bundling, Tauri runs `pnpm build:bundle`, which is
+  `vite build` only. The tagged commit already passed the full typecheck, tests
+  included, in CI on its pull request, and a second `tsc` on the release runner
+  ran out of the default Node heap.
 - The Linux job builds `Goodboy_<version>_amd64.AppImage`,
   `Goodboy_<version>_amd64.deb` and `Goodboy-<version>-1.x86_64.rpm` in parallel
   with macOS and uploads them as the workflow artifact `goodboy-linux-bundles`.
