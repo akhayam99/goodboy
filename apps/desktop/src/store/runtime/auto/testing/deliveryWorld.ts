@@ -78,14 +78,20 @@ type UserRowParams = {
   readonly id: string;
   readonly text: string;
   readonly atMs?: number;
+  readonly isNote?: boolean;
 };
 
-export const addUserRow = ({ world, id, text, atMs }: UserRowParams) =>
+export const addUserRow = ({ world, id, text, atMs, isNote = false }: UserRowParams) =>
   addOutboxRow({
     world,
     id,
     kind: 'user',
-    payload: { kind: 'user', text, facts: EMPTY_USER_FACTS },
+    payload: {
+      kind: 'user',
+      text,
+      facts: EMPTY_USER_FACTS,
+      ...(isNote ? { origin: 'operator', userText: text } : {}),
+    },
     ...(atMs === undefined ? {} : { atMs }),
   });
 

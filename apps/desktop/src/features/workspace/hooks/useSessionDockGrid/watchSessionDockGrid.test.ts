@@ -194,8 +194,8 @@ describe('the dock grid saved on the session', () => {
     expect(panelFocusKeyOf({ panels: shellPanelsOf({ state: state() }) })).not.toBe('browser');
   });
 
-  it('still loads a row saved before Scripts and Ask joined the grid', async () => {
-    db.rows.set(S1, {
+  it('ignores a version 1 row and keeps the layout the tools opened with', async () => {
+    db.rows.set(S2, {
       grid: JSON.stringify({
         version: 1,
         columns: [[BROWSER], [TERMINAL]],
@@ -208,10 +208,10 @@ describe('the dock grid saved on the session', () => {
     openTools({ entries: [TERMINAL, BROWSER] });
     watch();
 
-    await goTo({ sessionId: S1 });
+    await goTo({ sessionId: S2 });
 
-    expect(toolKinds()).toEqual([['browser'], ['terminal']]);
-    expect(state().drawerGrid.widths).toEqual({ browser: 760 });
+    expect(toolKinds()).toEqual([['terminal'], ['browser']]);
+    expect(state().drawerGrid.widths).toEqual({});
   });
 
   it('lays out Scripts and Ask in their own cells', async () => {
