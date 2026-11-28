@@ -218,7 +218,8 @@ describe('the shell shows before the data', () => {
     expect(state.currentWorkspaceId).toBe(NORTHWIND_ID);
     expect(state.sessions.map((session) => session.id)).toEqual([RELAY_ID]);
     expect(state.boardReady).toBe(true);
-    expect(state.currentSessionId).toBe(RELAY_ID);
+    expect(state.currentSessionId).toBeNull();
+    expect(state.openHomeWorkspaceId).toBe(NORTHWIND_ID);
   });
 
   it('leaves the skeletons and keeps the error when the switch made during the load fails', async () => {

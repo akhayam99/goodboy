@@ -36,10 +36,10 @@ const AGENT_COMPOSERS: Readonly<Record<string, ReadonlyArray<Kind>>> = {
   'features/auto/adopt/MoveToAutoPanel.tsx': ['document'],
   'shared/components/StartHint.tsx': ['document'],
   'features/chat/components/AgentTranscriptDrawer/index.tsx': ['message'],
-  'features/chat/components/DeskAgent/index.tsx': ['message'],
   'features/permissions/components/PermissionRequestCard/index.tsx': ['document'],
   'features/integrations/components/LaunchSessionPanel/index.tsx': ['document'],
   'features/browser/components/BrowserPane/BrowserPickNote.tsx': ['message'],
+  'features/session/ask/components/WorkspaceAskPane.tsx': ['message'],
 };
 
 const NOT_AGENT: Readonly<Record<string, string>> = {

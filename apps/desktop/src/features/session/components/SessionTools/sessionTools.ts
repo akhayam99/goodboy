@@ -12,7 +12,6 @@ export type SessionTool = {
   readonly label: string;
   readonly fullLabel?: string;
   readonly shortcut?: ShortcutId;
-  readonly isSessionOnly: boolean;
 };
 
 export const RAIL_TOOLS: ReadonlyArray<SessionTool> = [
@@ -21,33 +20,28 @@ export const RAIL_TOOLS: ReadonlyArray<SessionTool> = [
     icon: CONCEPT_ICONS.terminal,
     label: NAMES.terminal,
     shortcut: 'terminal.studio',
-    isSessionOnly: false,
   },
   {
     pane: 'browser',
     icon: CONCEPT_ICONS.browser,
     label: NAMES.browser,
     shortcut: 'browser.address',
-    isSessionOnly: false,
   },
   {
     pane: 'scripts',
     icon: CONCEPT_ICONS.scripts,
     label: NAMES.scripts,
-    isSessionOnly: true,
   },
   {
     pane: 'ask',
     icon: CONCEPT_ICONS.ask,
     label: 'Ask',
     shortcut: 'ask.open',
-    isSessionOnly: true,
   },
   {
     pane: 'monitoring',
     icon: CONCEPT_ICONS.monitoring,
     label: NAMES.monitor,
     fullLabel: NAMES.monitoring,
-    isSessionOnly: false,
   },
 ];

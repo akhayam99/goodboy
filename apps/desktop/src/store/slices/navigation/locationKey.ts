@@ -86,6 +86,9 @@ type PlaceParams = {
 };
 
 const placeKey = ({ place }: PlaceParams): string => {
+  if (place.at === 'home') {
+    return 'home';
+  }
   if (place.at === 'board') {
     return 'board';
   }

@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { brandId } from '@goodboy/types';
 import type { AgentId, ProviderRunId, SessionId, WorkflowId, WorkflowRunId } from '@goodboy/types';
 import {
   claimTurnStart,
@@ -31,19 +32,19 @@ vi.mock('../../../features/chat/turn', () => ({
 
 import { discardWorkflow } from './discardWorkflow';
 
-const SESSION_ID = 'session-1' as SessionId;
-const RUN_ID = 'run-1' as WorkflowRunId;
-const STARTING_ID = 'agent-starting' as AgentId;
-const RUNNING_ID = 'agent-running' as AgentId;
-const OTHER_ID = 'agent-other' as AgentId;
-const PROVIDER_RUN_ID = 'provider-run-1' as ProviderRunId;
+const SESSION_ID = brandId<SessionId>({ value: 'session-1' });
+const RUN_ID = brandId<WorkflowRunId>({ value: 'run-1' });
+const STARTING_ID = brandId<AgentId>({ value: 'agent-starting' });
+const RUNNING_ID = brandId<AgentId>({ value: 'agent-running' });
+const OTHER_ID = brandId<AgentId>({ value: 'agent-other' });
+const PROVIDER_RUN_ID = brandId<ProviderRunId>({ value: 'provider-run-1' });
 
 const buildHarness = () => {
   const state = {
     sessions: [
       {
         id: SESSION_ID,
-        workflowRuns: [{ id: RUN_ID, workflowId: 'wf-1' as WorkflowId }],
+        workflowRuns: [{ id: RUN_ID, workflowId: brandId<WorkflowId>({ value: 'wf-1' }) }],
       },
     ],
     sessionPhaseRuns: {
@@ -109,5 +110,39 @@ describe('discardWorkflow', () => {
     await discard(SESSION_ID, RUN_ID);
 
     expect(state.decisionRestartMarks).toEqual({ 'run-other': 3 });
+  });
+
+  describe('the session state after the discard', () => {
+    const FAILED_ID = brandId<AgentId>({ value: 'agent-failed' });
+
+    const withSurvivor = ({ status }: { readonly status: 'failed' | 'completed' }) => {
+      const harness = buildHarness();
+      const runs = harness.state.sessionPhaseRuns as Record<string, unknown[]>;
+      runs[SESSION_ID]?.push({ id: FAILED_ID, status });
+      Object.assign(harness.state.agentTurnState, {
+        [FAILED_ID]: {
+          kind: 'error',
+          message: 'The agent stopped',
+          failedAt: '2026-01-01T00:00:00Z',
+        },
+      });
+      return harness;
+    };
+
+    it('keeps the failure of a survivor whose row still says failed', async () => {
+      const { discard, state } = withSurvivor({ status: 'failed' });
+
+      await discard(SESSION_ID, RUN_ID);
+
+      expect(state.sessions[0]).toMatchObject({ state: { kind: 'error' } });
+    });
+
+    it('drops an error whose agent row completed after it', async () => {
+      const { discard, state } = withSurvivor({ status: 'completed' });
+
+      await discard(SESSION_ID, RUN_ID);
+
+      expect(state.sessions[0]).toMatchObject({ state: { kind: 'idle' } });
+    });
   });
 });

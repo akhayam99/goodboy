@@ -13,8 +13,7 @@ edits this section first.
 
 1. **Left is where you go. Holds.** The places rail
    ([surfaces.md](surfaces.md#the-places-rail)) holds New and the six places and
-   no tool. An open session keeps the Board lit, since it is the Board's child; the
-   Desk is a face of the session, not a place, and keeps it lit too. Sessions in
+   no tool. An open session keeps the Board lit, since it is the Board's child. Sessions in
    the top bar moves between sessions without the Board
    (`ShellLeft/index.test.tsx`, `regressions/places-rail.test.tsx`).
 2. **Right is what you hold. Holds.** The right rail sits at the sheet's right edge
@@ -34,11 +33,9 @@ edits this section first.
 8. **The places rail never folds. Holds.** No toggle, no peek, no saved width:
    64px with a word under each icon, 44px icons only under a 1100px window, and an
    old folded choice changes nothing (`regressions/places-rail.test.tsx`).
-9. **Inside a session, the right opens its Desk. Holds.** On the Overview, the
-   right rail tools open the Desk with that tool; on the Desk they show and hide
-   its panels, and closing the last one brings the Overview back. The head has no
-   switch between the two (`useDeskLanding/index.test.tsx`). Outside a session a
-   tool opens beside the page.
+9. **The right rail opens the dock on every screen. Holds.** A tool opens beside the
+   page, in a session or out of one, and stays open from one place to the next
+   (`watchSessionDockGrid.test.ts`).
 
 Also guarded today:
 
@@ -61,7 +58,7 @@ same list ([context-menus.md](context-menus.md)).
 ## Surfaces
 
 One app layout, and every surface fills its slots: the places rail, the main slot,
-the right drawer, the Desk and the header actions ([surfaces.md](surfaces.md)).
+the right drawer and the header actions ([surfaces.md](surfaces.md)).
 
 ## Top bar
 
@@ -97,8 +94,7 @@ sidebar toggle.
   open a row, and the pin calls `pinSession` or `unpinSession`, which leave the
   row in place when the write fails.
 - A row shows the status mark, the live line or the project, the count of what
-  waits on you (the Board's `needsYouOf`), and **Desk** when the session reopens on
-  its Desk ([session-rail.md](session-rail.md#a-sessions-row)).
+  waits on you (the Board's `needsYouOf`) ([session-rail.md](session-rail.md#a-sessions-row)).
 - While a session needs you, the control carries a warning dot whose tooltip says
   how many (`SessionsTrigger`).
 - After an update from a build with a sidebar session list, a one-time card under

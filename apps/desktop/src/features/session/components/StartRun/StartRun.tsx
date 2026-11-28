@@ -185,6 +185,7 @@ export const StartRun = ({
         blockedReason={blockedReason}
         canDiscard={!isFromSources}
         isBranchLocked={isFromSources}
+        isSectioned={isFromSources}
         actions={actions === undefined ? null : actions(slot)}
       />
     </section>

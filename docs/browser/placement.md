@@ -75,8 +75,6 @@ title, host and one reason line (`coverReasonText.ts`, from
 Two moves hide every view in the window, so the page is placed once at the end
 and not every frame:
 
-- **A face swap**: while the session moves between Overview and Desk,
-  `PaneSwap` sets `FACE_SWAP_ATTRIBUTE` on the body, with no reason line.
 - **A drag**: while a `SplitHandle` or a panel head drags (`useDockDrag`,
   value `move`), the body carries `SPLIT_DRAG_ATTRIBUTE` until release or
   unmount, also through renders mid drag.

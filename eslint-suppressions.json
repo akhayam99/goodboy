@@ -7374,7 +7374,7 @@
   },
   "apps/desktop/src/store/slices/agents/deleteAgent.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 15
+      "count": 12
     },
     "@typescript-eslint/naming-convention": {
       "count": 1
@@ -10284,7 +10284,7 @@
   },
   "apps/desktop/src/store/slices/workflows/discardWorkflow.test.ts": {
     "@typescript-eslint/consistent-type-assertions": {
-      "count": 11
+      "count": 5
     }
   },
   "apps/desktop/src/store/slices/workflows/discardWorkflow.ts": {

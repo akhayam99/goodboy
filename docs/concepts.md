@@ -63,7 +63,7 @@ from and goes back to, then the code it produces, and the chat last.
 - [workspaces.md](concepts/workspaces.md): creating, naming, switching or
   disconnecting a workspace, and a plain folder's face
 - [sessions.md](concepts/sessions.md): a session's stage, the Needs you ranking,
-  Done, the Overview and the Desk
+  Done and the Overview
 - [lazy-sessions.md](concepts/lazy-sessions.md): when a session gets a worktree,
   mounts, Unmount, Cleanup and Storage
 - [activity.md](concepts/activity.md): the Activity and Log feeds, the Needs you

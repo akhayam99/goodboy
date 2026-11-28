@@ -20,7 +20,6 @@ export { ShellRailContext } from './shellRailContext';
 export { UnderHeadContext } from './underHeadContext';
 export { HEAD_INSET_VAR } from './headInsetVar';
 export { SPLIT_DRAG_ATTRIBUTE } from './splitDragAttribute';
-export { FACE_SWAP_ATTRIBUTE } from './faceSwapAttribute';
 export { DrawerEdgeContext } from './drawerEdgeContext';
 export type { ResizeActivity, SheetEdge } from './sheet';
 export { DISABLED } from './disabledStyle';
@@ -56,8 +55,6 @@ export { splitErrorMessage } from './splitErrorMessage';
 export { formatTokens, formatUsd, formatUsdPrecise } from './format-cost';
 export { AppShell, COLLAPSED_RAIL_WIDTH } from './components/AppShell';
 export { DrawerColumn } from './components/DrawerColumn';
-export { DockLane } from './components/DockLane';
-export { isDeskColumnFolded } from './isDeskColumnFolded';
 export { READER_DRAWER_STORAGE_KEY, RIGHT_DRAWER_STORAGE_KEY } from './drawerWidthKeys';
 export type { DrawerColumnFrame, DrawerColumnProps } from './components/drawerColumnProps';
 export {
@@ -145,7 +142,7 @@ export {
 } from './components/StudioRailLayout';
 export type { StudioRailPlacement } from './components/StudioRailLayout';
 export { readStoredWidth, useResizableWidth } from './useResizableWidth';
-export { STUDIO_RAIL_FOLD_BELOW, studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
+export { studioRailFoldKey, useStudioRailFold } from './useStudioRailFold';
 export { INNER_COLUMN_SHORTCUT, innerColumnStore } from './innerColumnStore';
 export type { InnerColumn } from './innerColumnStore';
 export { useInnerColumn } from './useInnerColumn';
@@ -281,10 +278,8 @@ export type {
 export { SplitHandle } from './components/SplitHandle';
 export { Reveal } from './components/Reveal';
 export {
-  DELAY_STEP_MS,
   DURATION_BASE_MS,
   DURATION_QUICK_MS,
-  DURATION_SLOW_MS,
   SKELETON_FADE_MS,
   SKELETON_HOLD_MS,
   SKELETON_SHOW_AFTER_MS,

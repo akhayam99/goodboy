@@ -93,11 +93,11 @@ describe('the u50 nav docs scenes', () => {
     expect(Object.keys(U50_NAV_DOCS_SCENES)).toEqual(['u50-nav-docs-light', 'u50-nav-docs-dark']);
   });
 
-  it('opens Sessions with the face a session reopens on', async () => {
+  it('opens Sessions with a row for each session and no face label', async () => {
     renderScene({ name: 'u50-nav-docs-light' });
     const row = await rowOf({ title: DESK_TITLE });
 
-    expect(row.querySelector('[data-sessions-face="desk"]')?.textContent).toBe('Desk');
+    expect(row.querySelector('[data-sessions-face]')).toBeNull();
   });
 
   it('counts what waits on you in a row with the Queue number', async () => {

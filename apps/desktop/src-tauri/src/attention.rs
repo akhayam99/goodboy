@@ -28,10 +28,59 @@ include!(concat!(env!("OUT_DIR"), "/attention_reasons.rs"));
 
 const _: () = assert!(REASONS.len() == 5);
 
-const SESSION_FACTS_SQL: &str = "
+const IS_SETTLED_SQL: &str = "
+      EXISTS (
+        SELECT 1 FROM session_worktrees m
+        WHERE m.session_id = s.id AND TRIM(m.branch) <> ''
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM session_worktrees m
+        WHERE m.session_id = s.id AND TRIM(m.branch) <> ''
+          AND (
+            NOT EXISTS (
+              SELECT 1 FROM mount_pr_links l
+              WHERE l.mount_id = m.id AND l.state IN ('merged', 'closed')
+            )
+            OR EXISTS (
+              SELECT 1 FROM mount_pr_links l
+              WHERE l.mount_id = m.id AND l.state NOT IN ('merged', 'closed')
+            )
+          )
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM resolve_threads t
+        WHERE t.session_id = s.id AND t.state IN ('needs_answer', 'failed')
+      )";
+
+const SETTLED_AT_SQL: &str = "
+      (SELECT CASE WHEN COUNT(*) > 0 AND COUNT(*) = COUNT(l.merged_at)
+                   THEN MAX(l.merged_at) END
+       FROM mount_pr_links l
+       JOIN session_worktrees m ON m.id = l.mount_id
+       WHERE m.session_id = s.id AND l.state = 'merged')";
+
+const FAILED_AT_SQL: &str = "
+      (SELECT CASE WHEN COUNT(*) > 0 AND COUNT(*) = COUNT(a.last_finished_at)
+                   THEN MAX(a.last_finished_at) END
+       FROM live_agents a
+       WHERE a.session_id = s.id AND a.status = 'failed')";
+
+fn session_facts_sql() -> String {
+    let is_failure_settled = format!(
+        "({IS_SETTLED_SQL})
+      AND {SETTLED_AT_SQL} IS NOT NULL
+      AND {FAILED_AT_SQL} IS NOT NULL
+      AND {FAILED_AT_SQL} < {SETTLED_AT_SQL}
+      AND NOT EXISTS (
+        SELECT 1 FROM live_agents a
+        WHERE a.session_id = s.id AND a.started_at > {SETTLED_AT_SQL}
+      )"
+    );
+    format!(
+        "
     SELECT
       s.workspace_id,
-      s.state_kind = 'error',
+      s.state_kind = 'error' AND NOT ({is_failure_settled}),
       s.state_kind IN ('running', 'starting') OR EXISTS (
         SELECT 1 FROM live_agents a
         WHERE a.session_id = s.id AND a.status = 'running'
@@ -59,7 +108,9 @@ const SESSION_FACTS_SQL: &str = "
       )
     FROM sessions s
     JOIN workspaces w ON w.id = s.workspace_id
-    WHERE s.archived_at IS NULL AND s.deleted_at IS NULL AND w.deleted_at IS NULL";
+    WHERE s.archived_at IS NULL AND s.deleted_at IS NULL AND w.deleted_at IS NULL"
+    )
+}
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct SessionFacts {
@@ -132,7 +183,7 @@ struct Tally {
 }
 
 fn session_facts(conn: &Connection) -> Result<Vec<(String, SessionFacts)>, rusqlite::Error> {
-    let mut stmt = conn.prepare(SESSION_FACTS_SQL)?;
+    let mut stmt = conn.prepare(&session_facts_sql())?;
     let rows = stmt.query_map([], |row| {
         let facts = SessionFacts {
             is_errored: row.get::<_, i64>(1)? != 0,

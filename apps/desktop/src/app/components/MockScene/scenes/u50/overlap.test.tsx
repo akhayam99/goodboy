@@ -52,12 +52,14 @@ const renderScene = ({ name }: SceneParams) => {
 };
 
 describe('the u50 overlap scenes', () => {
-  it('puts a chip on each row of the three overlapping sessions', async () => {
+  it('puts the word of each row on a card of the three overlapping sessions', async () => {
     renderScene({ name: 'u50-overlap-light' });
 
-    await screen.findByRole('button', { name: 'Overlaps Retry the notify-relay sends +1' });
+    await screen.findByRole('button', {
+      name: 'Running, Overlaps Retry the notify-relay sends +1',
+    });
     expect(
-      screen.getAllByRole('button', { name: 'Overlaps Fix the Harborline ledger totals' }),
+      screen.getAllByRole('button', { name: 'Running, Overlaps Fix the Harborline ledger totals' }),
     ).toHaveLength(2);
   });
 

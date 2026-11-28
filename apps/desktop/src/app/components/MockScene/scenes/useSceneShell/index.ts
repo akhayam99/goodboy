@@ -2,6 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import type { ColumnActions } from '../../../ShellLeft/columnDoors';
 import { useAppOverlays } from '../../../../hooks/useAppOverlays';
 import { useGoToBoard } from '../../../../hooks/useGoToBoard';
+import { openHome } from '../../../../../shared/navigation/openHome';
 import { useAppStore, useCurrentSession, useCurrentWorkspace } from '../../../../../store';
 import { useSceneShortcuts } from '../useSceneShortcuts';
 
@@ -28,6 +29,7 @@ export const useSceneShell = ({}: Params): SceneShell => {
   useSceneShortcuts({ openPalette: overlays.openPalette });
   const actions = useMemo<ColumnActions>(
     () => ({
+      openHome,
       openBoard: goToBoard,
       openInbox: overlays.openInbox,
       openChat: overlays.openChat,

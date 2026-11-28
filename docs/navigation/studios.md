@@ -17,7 +17,7 @@ the content sheet over the page it replaces.
 - On close, `StudioFrame` gives focus back to what opened the studio, or to its
   door when that is gone (Search or run), unless focus already sits outside the
   studio (`restoreStudioOpener`).
-- On Home, which has no column, the app studios take the whole window: Settings
+- On Workspaces, which has no column, the app studios take the whole window: Settings
   (its corner gear, ⌘, or ⌘/ for shortcuts) and the guide. Search or run opens
   there too.
 

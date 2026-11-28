@@ -203,7 +203,7 @@ const changesOnBranch = ({ state, request }: ChangesParams): Place => {
 };
 
 const canonicalPlace = ({ state, request: asked }: PlaceParams): Place => {
-  if (asked.at === 'board' || asked.at === 'session-draft') {
+  if (asked.at === 'home' || asked.at === 'board' || asked.at === 'session-draft') {
     return asked;
   }
   const request = unavailableBranchTab({

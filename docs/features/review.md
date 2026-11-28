@@ -17,7 +17,7 @@ Turn review comments into commits without writing the fixes yourself. Check the 
 
 Handle many comments at once.
 
-- **Fix comments** checks every open comment.
+- **Fix comments** counts and selects every open comment, and lists each one by its text.
 - **Use the recommended answers** answers the agent's open questions in one go.
 - **Apply fix** takes every waiting fix, with **Undo** right after.
 
@@ -237,6 +237,8 @@ A branch row on the Overview opens the tab its state names:
 - A conflict, a rebase or commits not pushed open **Commits**.
 - Anything else opens **Conversation**, and so do Search, Activity and Tasks.
 
+A comment opens on its own branch. This holds from a notification, Needs you, Next, the session and the Comments tab, on GitHub, GitLab and Bitbucket. A sibling branch of the same project never takes its place.
+
 #### Checks tab
 
 On **Checks**, a failing GitHub Actions row shows the end of its log under its name. **Open on GitHub** opens the rest. The first failing check opens with its log, and a click on the row hides or shows it. A check from another service opens on its host.
@@ -353,6 +355,7 @@ Read the branch against its base in **Changes**, unified or split. The changed f
 
 - Drag the list's edge to widen it or hide it. **Show files** brings it back.
 - Quote lines into a note, or choose **Ask agent** to send them to an agent with your question.
+- Your notes and the reviewers' threads sit under their line, with their state, the same one Comments shows. An open thread is open, a resolved one is a single line. A thread whose line left the diff sits at the top of its file as **Outdated**. A file in the list carries the count of its open threads. **Reply**, **Resolve** and **Fix** work from the thread.
 - The Branch header refreshes after a local commit edit. **Force push** waits in **⋯** behind its confirm.
 
 <picture>
@@ -394,6 +397,8 @@ The review goes to the pull request of the branch on screen, the one you picked 
 
 This part is for contributors and agents who change the feature.
 
+- Threads in Changes: `useDiffReviewThreads` reads the host threads of the branch on screen. It asks for them with `refreshSessionPrDetail` when the detail is not loaded. Each state word comes from `hostThreadStatusOf`, which asks `reviewCommentStateOf`. `placeThreads` splits the threads into line, file and outdated ones (`threadPlacement.test.ts`, scene `diff-threads`). A thread draws `ThreadFixVerb`, the `reviewComment.draft` verb of `ObjectActionVerb`.
+- Comment door: `threadMountIdOf` is the one owner of the mount a thread sits on. A note matches the mount of its project and branch. A host thread matches the mount that carries its request in `reviewSourceEntriesOf`. A project with a single mount is the last resort. `commentBranchPlaceOf` turns that into the place of every door (`openReviewComment`, `attentionPlace`, `requestReview`, `openReviewTarget`). With no owner it keeps the branch on screen (`commentOpensItsBranch.test.ts`).
 - Comments list: `ReviewList`, `ReviewListRow` and `commentsCountOf` draw the list and the count on **Fix N threads**.
 - Unread threads: `unreadThreadsOf` is the one function. It joins the threads to the comments of the selected source, keeps the threads `rowBelongsToSource` lists, and returns null while the reads or the viewer identity are not loaded. `useUnreadThreads` feeds it to `usePullRequestReadiness` (the line) and to `useThreadVisit` (the dots). `ReviewFlowVisit` mounts `useThreadVisit` above `ReviewFlow` and gives the visit snapshot to `ReviewList` through `ThreadVisitContext`, so it survives the Resolved switch and an empty list. A write is deduped only while it is in flight.
 - Read record: the `thread_reads` table (m239), keyed by session and host thread id, behind the `store/slices/thread-reads` slice. m239 backfills one row per existing `resolve_threads` row at the migration time. `read_at` is the latest time of a comment by someone else among the shown ones, falling back to the fetch time, and the upsert keeps the `MAX`. Memory changes only after the write succeeds and only inside an entry that a load created. A load merges with `max` per thread, so a late load never undoes a mark, and a late `loadThreadReads` answer is dropped.
@@ -403,7 +408,8 @@ This part is for contributors and agents who change the feature.
 - Write review target: `mountReviewOf` gives the request of the branch on screen, its `mountSelectedPr` pick before its canonical one, never a request of another branch. A branch without one gets the linked requests of its repository. With no branch on screen it gives every choice, and on Bitbucket the link. `ReviewTargetChooser` draws the choice in the form and above the diff while it loads or fails (`WriteReview/index.test.tsx`). `addReviewDraft` takes the target and stamps it on the draft, and `publishPrReview` sends only the drafts stamped with the target it is given (`index.test.ts`, `mountReviewOf.test.ts`).
 - Reply style: `useGithubProjectRoots` reads each project remote and returns null until the answer matches the workspace and projects on screen. `learnWorkspaceReplyStyle` reads only those on GitHub and turns every failed read into a line that says your note is unchanged (`learnWorkspaceReplyStyle.test.ts`, `WorkspaceReviewRepliesSection.test.tsx`).
 - Note fixes: `owner_tree_on` and `integrate_onto_owner_tree` in `apps/desktop/src-tauri/src/worktree/candidates/owner_tree.rs` start the copy on the working tree and land the fix uncommitted. `readyFixBlocking` in `resolveLane.ts` holds a fix behind a ready one, and `ReadyFixFirst` draws the line. `move_branch` in `branch_move.rs` moves a comment fix onto the branch by name. `buildResolverKickoffParts` adds the note section to the brief, and `isOffTargetFix` decides the line under Proposed change. A run that ends without a result records `no_result`.
-- Broad comments: `commentScopeOf` is the one breadth rule, long meaning past 400 characters. `commentLaneOf` turns it into the fix, run or in-run lane, and `useReviewEntries` puts the lane on each entry. `useBranchReview` counts **Fix N comments** and the run suggestion from that lane. `reviewBarPlanOf` leads a broad comment with `reviewComment.startRun`, and `branchStepOf` adds the `suggestRun` step. A live run (`isLiveCommentRun`: not stopped, not failed) puts its threads in the in-run lane. A run is a Lead started from comments or any open Lead a comment was sent to (`holdsCommentThreads`); a fix or a recheck never is.
+- Broad comments: `commentScopeOf` is the one breadth rule, long meaning past 400 characters. `commentLaneOf` turns it into the fix, run or in-run lane, and `useReviewEntries` puts the lane on each entry. `useBranchReview` counts **Fix N comments** and the run suggestion from that lane. `reviewBarPlanOf` leads a broad comment with `reviewComment.startRun`, and `branchStepOf` adds the `suggestRun` step. A run still working puts its threads in the in-run lane (`isRunningCommentRun`). A run is a Lead started from comments or any open Lead a comment was sent to (`holdsCommentThreads`); a fix or a recheck never is.
+- Selection: `useCommentRunThreadIds` frees the comments of a completed, skipped or finished run. `rowQualifierOf` says why a comment in a running one cannot be selected. `FixCommentsDrawer` reads the branch scope of `useReviewEntries`, the one the head counts, and starts its batch with the comment's own mount (`launchThreadsOf`, `startBatch`).
 - In a run: `commentRunViewsOf` maps each thread to the run `commentRunOf` names, with the word `sessionRunsOf` gives that run (`useCommentRuns`). `projectResolveComment` turns an open, failed or left open thread into `in_run` while the run works, and an open or failed one into `run_finished` after; `CommentRunStrip` draws the drawer strip. The actions read `runAgentId` to leave out Fix, Skip and the fix retries (`reviewComment.matrix.test.ts`, scene `u47-comment-run-working`).
 - Run end: `commentRunViewsOf` gives each run view an `end` (working, finished, stopped) and the Lead's `outputSummary`. A stopped or failed run still names its threads, and `projectResolveComment` gives them their own word back. `useCommentRuns` and the action facts share `commentRunViewsFrom`.
 - Run end actions: `reviewComment.resolveRunNote` closes a note with `closeResolvedNote`, and `reviewComment.reopenRunNote` reopens it. `reviewComment.replyFromRun` calls `replyFromCommentRun`. It reads the mount's worktree status, refuses while commits wait to be pushed, then calls `replyAndResolveThread` (`replyFromCommentRun.test.ts`). `reviewComment.keepOpen` leaves the comment open. `sendChangeToCommentRun` queues the new text and only then settles the change (`sendChangeToCommentRun.sqlite.test.ts`, scenes `u47-comment-run-finished`, `-stopped`, `-changed`).

@@ -86,12 +86,11 @@ offers at most three active Leads of the same workspace with a branch in the
 item's project, ranked with no model call by `leadCandidatesOf`: the Lead that
 holds the item, then the same branch, session and project, then the most recent.
 
-## Overview, Desk and the Board
+## Overview and the Board
 
-- **Overview** and **Desk** are the two faces of a session under one head, with
-  no switch: opening a tool from the right rail makes the Desk, closing the last
-  tool brings back the Overview, and a session reopens with the tools it had.
-  The Desk always belongs to one session.
+- The **Overview** is a session's page. A tool opened from the right rail opens in
+  the dock beside it and stays open from one place to the next; a session
+  remembers how you laid the tools out.
 - **Changes** is not a session tab: a pull request's changes open from its row in
   the Overview's Projects block.
 - A **move** takes a session forward, with its reason and verb. **Needs you**

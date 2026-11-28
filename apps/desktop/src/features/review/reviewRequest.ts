@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
-import { branchPlace } from '../../store/slices/navigation/place';
+import { commentBranchPlaceOf } from './commentBranchPlaceOf';
 import { dispatchAfterNavigation } from '../actions/dispatchAfterNavigation';
 
 export const REVIEW_REQUEST_EVENT = 'goodboy:review-request';
@@ -58,10 +58,10 @@ const requestFix = ({ getState, sessionId, threadIds }: FixParams): void => {
     return;
   }
   state.navigate({
-    to: branchPlace({
+    to: commentBranchPlaceOf({
+      state: getState(),
       sessionId,
-      tab: 'comments',
-      threadId: fromThreadId,
+      threadId: fromThreadId ?? threadIds[0] ?? null,
     }),
   });
 };
@@ -76,7 +76,7 @@ export const requestReview = ({ getState, sessionId, request }: Params): void =>
   }
   const threadId = 'threadId' in request ? request.threadId : null;
   getState().navigate({
-    to: branchPlace({ sessionId, tab: 'comments', threadId }),
+    to: commentBranchPlaceOf({ state: getState(), sessionId, threadId }),
     drawer: threadId === null ? null : { kind: 'conversation', sessionId, payload: { threadId } },
   });
   dispatchAfterNavigation({ name: REVIEW_REQUEST_EVENT, detail: { sessionId, request } });

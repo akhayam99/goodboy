@@ -5,12 +5,18 @@ import { columnPlaceOf, isStudioOverSession, type ColumnPlace } from './columnPl
 
 describe('columnPlaceOf', () => {
   it('names Board on the board and nothing inside a session, where the session row is the sign', () => {
-    expect(columnPlaceOf({ hasSession: false, isDraftShown: false, studio: null })).toBe('board');
-    expect(columnPlaceOf({ hasSession: true, isDraftShown: false, studio: null })).toBeNull();
+    expect(
+      columnPlaceOf({ hasSession: false, isDraftShown: false, isHomeShown: false, studio: null }),
+    ).toBe('board');
+    expect(
+      columnPlaceOf({ hasSession: true, isDraftShown: false, isHomeShown: false, studio: null }),
+    ).toBeNull();
   });
 
   it('names New session while the draft is open', () => {
-    expect(columnPlaceOf({ hasSession: false, isDraftShown: true, studio: null })).toBe('new');
+    expect(
+      columnPlaceOf({ hasSession: false, isDraftShown: true, isHomeShown: false, studio: null }),
+    ).toBe('new');
   });
 
   it('lets an open studio win over the page under it', () => {
@@ -30,7 +36,9 @@ describe('columnPlaceOf', () => {
       ['addWorkspace', 'addWorkspace'],
     ];
     for (const [studio, place] of cases) {
-      expect(columnPlaceOf({ hasSession: true, isDraftShown: true, studio })).toBe(place);
+      expect(
+        columnPlaceOf({ hasSession: true, isDraftShown: true, isHomeShown: false, studio }),
+      ).toBe(place);
     }
   });
 
@@ -51,7 +59,9 @@ describe('columnPlaceOf', () => {
       'addWorkspace',
     ];
     for (const studio of kinds) {
-      expect(columnPlaceOf({ hasSession: true, isDraftShown: false, studio })).not.toBeNull();
+      expect(
+        columnPlaceOf({ hasSession: true, isDraftShown: false, isHomeShown: false, studio }),
+      ).not.toBeNull();
     }
   });
 

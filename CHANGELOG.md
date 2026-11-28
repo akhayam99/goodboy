@@ -12,6 +12,52 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.44.1
+
+A workspace opens on a Home page, the diff shows comments with their state, tools stay open from screen to screen, and your iPhone sees every workspace.
+
+### New
+
+#### A Home page for each workspace
+<!-- gb area=app pr=2462,2464,2465,2467 -->
+
+A workspace opens on Home, the first door of the rail, with cards for what needs you, what runs, usage, spend and tasks. A session closes back to Home with one button.
+
+#### Ask about the workspace from any screen
+<!-- gb area=app pr=2469 -->
+
+Ask works on Home, the Board and every screen with no session. Your question starts a Chat thread for the workspace.
+
+#### Your iPhone sees every workspace
+<!-- gb area=app pr=2470 -->
+
+Your iPhone sees every workspace, shows what the Lead is asking, and can start the next step it proposes.
+
+### Improved
+
+#### Comments in the diff
+<!-- gb area=review pr=2461 -->
+
+The diff shows your comments and the reviewers' under their line, with their state. The file list counts the open threads per file.
+
+#### Tools stay open between screens
+<!-- gb area=app pr=2460,2463,2466 -->
+
+A tool opened on the Board or in a session stays open when you move on, and the Terminal follows the session you are in. Tools open in the dock beside the Overview.
+
+#### One word and one move on a branch row
+<!-- gb area=sessions pr=2449,2459 -->
+
+Each branch row says its state in one word and offers the one button that fits it. The word opens a card with the merge order of branches that share files.
+
+### Fixed
+
+- Rebase from Next opens the branch choice again. <!-- gb area=sessions pr=2455 -->
+- Fix comments counts every open comment, lists each by its text and starts the fix on the comment's own branch. <!-- gb area=review pr=2457 -->
+- A comment opens on its own branch. <!-- gb area=review pr=2458 -->
+- The form that starts a run from comments reads top to bottom. <!-- gb area=review pr=2456 -->
+- Cards whose agent was re-run, and sessions whose branch is merged or closed, leave Needs you. The dock count of other workspaces follows the same rule. <!-- gb area=sessions pr=2472 -->
+
 ## Goodboy v0.44.0
 
 The iPhone finds your Mac again, the Lead's cost shows in each run, and the bell stops repeating itself.

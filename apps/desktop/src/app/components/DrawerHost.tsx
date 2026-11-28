@@ -17,9 +17,6 @@ import { ArtifactReadingDrawer } from './ArtifactReadingDrawer';
 import { readingArtifactOf } from './ArtifactReadingDrawer/readingArtifact';
 import { drawerKey } from '../../store/slices/drawer/drawerKey';
 import type { DrawerRequest } from '../../store/slices/drawer/state';
-import { shownDeskStackOf } from '../../store/slices/drawer/shownDeskStackOf';
-import { DeskAgentPanel } from './DeskAgentPanel';
-import { DeskDetailStack } from './DeskDetailStack';
 import { PanelBoundary } from './PanelBoundary';
 import { renderRegisteredDrawer } from './renderRegisteredDrawer';
 import { lazyNamed } from '../../shared/lib/lazyNamed';
@@ -33,7 +30,6 @@ const ArtifactShellDrawer = lazyNamed({
 type RenderParams = {
   readonly drawer: DrawerRequest;
   readonly isReading: boolean;
-  readonly isDesk: boolean;
   readonly closeDrawer: () => void;
   readonly closeQuestion: () => void;
   readonly openDrawer: (request: DrawerRequest) => void;
@@ -42,7 +38,6 @@ type RenderParams = {
 const renderDrawer = ({
   drawer,
   isReading,
-  isDesk,
   closeDrawer,
   closeQuestion,
   openDrawer,
@@ -138,15 +133,7 @@ const renderDrawer = ({
         />
       );
     case 'transcript':
-      return isDesk ? (
-        <DeskAgentPanel
-          key={drawerKey(drawer)}
-          sessionId={drawer.sessionId}
-          agentId={drawer.payload.agentId}
-          focus={drawer.payload}
-          onClose={closeDrawer}
-        />
-      ) : (
+      return (
         <LazyFixRunTranscriptDrawer
           key={drawerKey(drawer)}
           sessionId={drawer.sessionId}
@@ -214,13 +201,6 @@ export const DrawerHost = ({ slot = 'top' }: Props) => {
     }
   };
   const closeQuestion = isTop ? closeTopQuestion : closeDrawer;
-  const isDesk = useAppStore(
-    (s) =>
-      drawer !== null && drawer.sessionId !== null && s.sessionFace[drawer.sessionId] === 'desk',
-  );
-  const isDeskStack = useAppStore(
-    (s) => slot === 'detail' && tool === null && shownDeskStackOf({ state: s }) !== null,
-  );
   const isReading = useAppStore((s) => {
     const open = hostedDrawerOf({ state: s, slot, tool });
     return (
@@ -233,16 +213,13 @@ export const DrawerHost = ({ slot = 'top' }: Props) => {
     );
   });
 
-  if (isDeskStack) {
-    return <DeskDetailStack />;
-  }
   if (drawer === null) {
     return null;
   }
   return (
     <PanelBoundary key={drawerKey(drawer)} leaveLabel="Close drawer" onLeave={closeDrawer}>
       <div className="contents" data-browser-session={drawer.sessionId}>
-        {renderDrawer({ drawer, isReading, isDesk, closeDrawer, closeQuestion, openDrawer })}
+        {renderDrawer({ drawer, isReading, closeDrawer, closeQuestion, openDrawer })}
       </div>
     </PanelBoundary>
   );

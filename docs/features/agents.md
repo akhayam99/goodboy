@@ -90,15 +90,9 @@ Open any agent or step on its own page, in every kind of run. Every door lands t
 
 The page says who the agent is, why it started, its brief and what came back. Its composer talks to that agent. The panel beside a chat reads **Steps** and keeps the error that **Failed here** points at. A failed child of a Lead has one **Retry** in the dock.
 
-### Agent and pull request on the Desk
+### Pull request panel
 
-Watch an agent fix what its pull request shows, side by side. On the Desk the agent and the pull request open as two short panels in the place beside the tools, the agent on top. On the Overview the two open one at a time.
-
-The agent panel:
-
-- Holds its conversation, what it does right now and a message box.
-- Says **Finished** when the agent is done, and **Open run** opens its page.
-- Brings the failed step into view with **Failed here**.
+A pull request opens in the place beside the tools, one panel at a time with the agent's page.
 
 The pull request panel:
 
@@ -107,7 +101,7 @@ The pull request panel:
 - Says so when a read fails, with **Retry**.
 - Opens its page with **Open pull request**.
 
-A row of Now opens its agent here, and the row of the open agent is selected. The Desk opens again with the agent and the pull request it had.
+A row of Now opens that agent's page.
 
 ### What the agent received
 
@@ -489,10 +483,7 @@ This part is for contributors and agents who change the feature.
 - Chat queue tray: `QueuedMessages` and `ComposerTray` in `shared/components` draw the rows the session composer draws, and `MessageComposer` takes them through `canQueue`, `tray` and `restoredImages`. `chatQueue/index.test.ts` runs order, remove, Stop, failure, chat switch and delete on the real store, and the `chat-queue` scene shows the tray.
 - Chat archive and rename: every archive in `features/workspace-chat` goes through `offerArchiveUndo`, the `undoable` toast that restores the chats and opens the open one again in Chat, from any studio. The undo drops itself once the chats left Archived, and selects only a chat that came back (`offerArchiveUndo.test.ts`). `nextChatAfter` picks the chat below, then above, in the list order of `chatOrderOf`, or in the Archived order for an archived chat (`ChatStudio.test.tsx`). A row renames through `useInlineRename` and `TitleField`. The first visit autofocuses only when `isUserActivated` says a click or a key opened it, so a restore at launch leaves the focus alone (`ChatStudio.test.tsx`).
 - Lead: the screens say Lead, the code keeps the engine name auto (role `auto`, `auto_trees`, `features/auto/`); [docs/auto.md](../auto.md#names) maps one to the other. The five words come from `leadStopOf` in `packages/core/src/auto/leadStopOf.ts`, through `autoTreeWordOf`. The ⌘K rows are `leadEntries` over `workRowsOf`, read by `loadWorkLeads` from `listAutoWorkTreesOfWorkspace` in `packages/db/src/queries/auto-work-trees.ts`. A saved `work` studio folds to the Board in `withoutRemovedPages`. Asks are listed by `leadAsksOf`, answered by `answerAsk` and drawn in `AutoDockAsk`.
-- Desk pair: the pull request is the drawer kind `pull-request` (mount, tab, check). `slotAfterOpen` keeps a `transcript` and a `pull-request` of one session as the pair (`deskStackOf`). The tool stays in the grid beside them. `shownDeskStackOf` draws the pair only on the Desk face. There `DrawerHost` draws it with `DeskDetailStack`.
-- Desk agent: a lone `transcript` on the Desk is `DeskAgent`. It takes the `turn` and `toolUseId` of the request and reveals them through `useRevealToolCall`. `NowSection` opens a row's agent as a panel on the Desk and selects it (`deskAgentIdOf`).
-- Desk pull request: `DeskPr` reads its request, checks and comments through `useDeskPrSource`. GitHub reads the mount detail; GitLab and Bitbucket read `usePullRequestView` and the source threads. Missing detail is asked for, and a failed read shows Retry. The failing check's log comes from `useCheckLog` (`fetchFailedCheckLog`, the latest answer only); with no log, `DeskCheckLog` names the host of the check link (`remoteHostNameOf`).
-- Desk saved: the window place never saves a `pull-request` (`UNSAVED_DRAWER_KINDS`), so the previous release still opens it. The row keeps the shown readers in an optional `detail` field, never a reader the pair replaced (`deskDetailOf`, `storedDockGridOf`, `parseStoredDeskDetail`). `appliedDockGrid` opens them again only when the Desk is the face once the read returns (`recallDockGrid`). It skips them when something else took the place meanwhile. `deskStack.test.ts`, `storedDeskDetail.test.ts`, `deskDetailSaved.test.ts`, `columnYields.test.ts`, `DeskPr/index.test.tsx` and the `u50-desk-kinds` scenes cover each case.
+- Pull request panel: `DeskPr` reads its request, checks and comments through `useDeskPrSource`. GitHub reads the mount detail; GitLab and Bitbucket read `usePullRequestView` and the source threads. Missing detail is asked for, and a failed read shows Retry. The failing check's log comes from `useCheckLog` (`fetchFailedCheckLog`, the latest answer only); with no log, `DeskCheckLog` names the host of the check link (`remoteHostNameOf`).
 - Comment runs: `sessionRunsOf` takes `commentPlaces` (from `commentRunPlacesOf`) and `commentRunOriginOf` words the origin of a `comment_run` agent. `CommentRunSources` draws From N comments in the Lead page `context` slot from `commentRunHeadsOf` (`sessionRunsOf.test.ts`, scene `u47-comment-run-working-page`).
 - Durable send: `useTurnDispatch` calls `sendAgentMessage`, which writes the row (`enqueueAgentMessage` with `isDirect`, saved as `sending`) and then delivers it through `deliverQueuedTurn` with the `queue:<id>` delivery id. A held row carries `hold.reason`; `queuedRowsOf` draws it as Not delivered with Retry (`retryQueuedMessage`), hides a direct row for its first 500 ms (`directRevealAtOf`) and words a stopped agent's row. `drainSessionQueues` runs after `loadAgentQueues` and skips a held head row, whose hold is saved with the row. The transcript drawer sends through `sendAgentMessage` too. `store.sqlite-send-durable.test.ts` proves one delivery per row across a refusal, a reload, two drains and a crash replay. It also covers a cancelled start and a turn that failed before it started. The `u36-p2-send-held` and `u36-p2-send-stopped` scenes show the rows.
 - Child routing: `resolveChildRouting` takes the role's pool from `autoChildPool`. `autoChildProviders` gives `AUTO_OWN_PROVIDERS` to a reading role and `AUTO_WRITER_CHILD_PROVIDERS` to a writer. The role default is resolved only over providers not cooling down or over budget. `buildCandidates` lists the models the Lead may pick and `checkPick` keeps its pick or takes the best by the rule (`childRoutingReason`). A queued child is checked again when its slot frees (`recheckQueuedRouting`), and a continue keeps its stored pick (`agentLock`). A blocked child gets `childRoutingRefusal`. `ensure_auto_child` in `providers/cli_probe.rs` checks the same split at spawn. `resolveChildRouting.test.ts` runs the usage limit case on the real store.

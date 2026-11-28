@@ -50,7 +50,6 @@ import { BoardScene } from '../scenes/BoardScene';
 import { BoardSelectedScene } from '../scenes/BoardSelectedScene';
 import { BoardDeleteConfirmScene } from '../scenes/BoardDeleteConfirmScene';
 import { TranscriptMountScene } from '../scenes/TranscriptMountScene';
-import { BoardKeptDeskScene } from '../scenes/BoardKeptDeskScene';
 import { BoardShellScene } from '../scenes/BoardShellScene';
 import { LeadPermissionScene } from '../scenes/LeadPermissionScene';
 import {
@@ -388,7 +387,6 @@ export const BASE_SCENES = {
   'board-selected': BoardSelectedScene,
   'board-delete-confirm': BoardDeleteConfirmScene,
   'transcript-mount': TranscriptMountScene,
-  'board-kept-desk': BoardKeptDeskScene,
   'board-shell': BoardShellScene,
   'lead-permission-wait': LeadPermissionScene,
   'artifact-report': ArtifactReportScene,

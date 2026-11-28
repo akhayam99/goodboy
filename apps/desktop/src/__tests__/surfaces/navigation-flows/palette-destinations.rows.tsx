@@ -114,6 +114,12 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     },
   },
   {
+    name: 'palette: Home',
+    covers: ['navigate', 'palette:Home'],
+    open: () => openPalette(/^Home$/),
+    lands: () => heading('Home'),
+  },
+  {
     name: 'palette: Board',
     covers: ['navigate', 'palette:Board'],
     open: () => openPalette(/^Board$/),
@@ -508,7 +514,7 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
     lands: () => visible('dialog', 'Link work'),
   },
   {
-    name: 'palette: no Desk row, since a tool from the right rail opens the Desk',
+    name: 'palette: no Desk row, since a tool from the right rail opens in the dock',
     covers: ['palette:Desk'],
     open: async () => {
       await clickButton(/^Search or run \(/);
@@ -516,9 +522,8 @@ export const PALETTE_DESTINATION_ROWS: ReadonlyArray<Row> = [
       fireEvent.change(input, { target: { value: 'desk' } });
       await settle();
     },
-    lands: async (ctx) => {
+    lands: async () => {
       expect(screen.queryByRole('option', { name: /^Desk/ })).toBeNull();
-      expect(useAppStore.getState().sessionFace[ctx.sessionId] ?? 'overview').toBe('overview');
     },
   },
   ...(['payments-api', 'ledger-core'] as const).map((project): Row => ({

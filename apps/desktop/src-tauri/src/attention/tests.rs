@@ -107,13 +107,82 @@ fn add_threads(
     }
 }
 
-fn add_request(conn: &Connection, session: &str, state: &str, snapshot: &str) {
+fn add_link(conn: &Connection, mount: &str, state: &str, merged_at: Option<i64>, snapshot: &str) {
     conn.execute(
-        "INSERT INTO mount_pr_links (id, mount_id, provider, host, repo_slug, pr_number, head_branch, url, state, snapshot_json, last_observed_at, created_at, updated_at)
-         VALUES (?1, ?2, 'github', 'github.com', 'harborline/ledger-core', 7, 'ak/feat', 'https://example.test/7', ?3, ?4, 1, 1, 1)",
-        rusqlite::params![format!("link-{session}"), format!("mount-{session}"), state, snapshot],
+        "INSERT INTO mount_pr_links (id, mount_id, provider, host, repo_slug, pr_number, head_branch, url, state, snapshot_json, last_observed_at, created_at, updated_at, merged_at)
+         VALUES (?1, ?2, 'github', 'github.com', 'harborline/ledger-core', 7, 'ak/feat', 'https://example.test/7', ?3, ?4, 1, 1, 1, ?5)",
+        rusqlite::params![format!("link-{mount}"), mount, state, snapshot, merged_at],
     )
     .unwrap();
+}
+
+fn add_request(conn: &Connection, session: &str, state: &str, snapshot: &str) {
+    add_link(conn, &format!("mount-{session}"), state, None, snapshot);
+}
+
+fn add_extra_mount(conn: &Connection, session: &str, index: usize) -> String {
+    let mount = format!("mount-{session}-{index}");
+    conn.execute(
+        "INSERT INTO session_worktrees (id, session_id, branch, created_at) VALUES (?1, ?2, 'ak/other', 1)",
+        rusqlite::params![mount, session],
+    )
+    .unwrap();
+    mount
+}
+
+fn add_agent_at(
+    conn: &Connection,
+    session: &str,
+    name: &str,
+    status: &str,
+    finished_at: Option<i64>,
+    started_at: Option<i64>,
+) {
+    conn.execute(
+        "INSERT INTO agents (id, session_id, ordinal, name, status, last_finished_at, started_at)
+         VALUES (?1, ?2, 1, ?1, ?3, ?4, ?5)",
+        rusqlite::params![
+            format!("{name}-{session}"),
+            session,
+            status,
+            finished_at,
+            started_at
+        ],
+    )
+    .unwrap();
+}
+
+fn seed_settle(conn: &Connection, session: &str, settle: &Value, is_errored: bool) {
+    let requests = settle["requests"].as_array().expect("fixture requests");
+    for (index, request) in requests.iter().enumerate() {
+        let mount = match index {
+            0 => format!("mount-{session}"),
+            _ => add_extra_mount(conn, session, index),
+        };
+        if let Some(state) = request["state"].as_str() {
+            add_link(conn, &mount, state, request["mergedAt"].as_i64(), "{}");
+        }
+    }
+    if is_errored {
+        add_agent_at(
+            conn,
+            session,
+            "failed",
+            "failed",
+            settle["failedAt"].as_i64(),
+            None,
+        );
+    }
+    if let Some(started_at) = settle["agentStartedAt"].as_i64() {
+        add_agent_at(
+            conn,
+            session,
+            "followup",
+            "completed",
+            None,
+            Some(started_at),
+        );
+    }
 }
 
 fn seed_case(conn: &Connection, case: &Value) {
@@ -158,6 +227,9 @@ fn seed_case(conn: &Connection, case: &Value) {
     );
     if flag(facts, "isCiFailing") {
         add_request(conn, "s-1", "open", "{\"checks\":\"failure\"}");
+    }
+    if !case["settle"].is_null() {
+        seed_settle(conn, "s-1", &case["settle"], flag(session, "isErrored"));
     }
 }
 

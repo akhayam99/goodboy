@@ -1,6 +1,6 @@
 import type { Agent, Session } from '@goodboy/types';
 import { autoTreeStatesOf } from './autoTreeStatesOf';
-import { isFailureSettled } from '../../../../features/auto/isFailureSettled';
+import { isFailureSettled } from '@goodboy/core/attention';
 import type { AutoWaitState } from './autoWaitRootsOf';
 
 type Params = {

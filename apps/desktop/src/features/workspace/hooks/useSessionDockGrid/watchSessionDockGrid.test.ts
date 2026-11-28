@@ -49,7 +49,6 @@ vi.mock('../../../../shared/lib/db', async () =>
 );
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
 import { brandId, type SessionId, type WorkspaceId } from '@goodboy/types';
 import { aSession } from '@goodboy/types/testing';
 import {
@@ -59,7 +58,12 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { BOARD_PLACE, sessionPlace } from '../../../../store/slices/navigation/place';
-import type { DrawerGrid, DrawerRequest } from '../../../../store/slices/drawer/state';
+import { gridAfterOpen } from '../../../../store/slices/drawer/gridAfterOpen';
+import {
+  EMPTY_DRAWER_GRID,
+  type DrawerGrid,
+  type DrawerRequest,
+} from '../../../../store/slices/drawer/state';
 import {
   parseStoredDockGrid,
   storedDockGridOf,
@@ -67,17 +71,26 @@ import {
 import { panelFocusKeyOf } from '../../../../store/slices/drawer/panelFocusKeyOf';
 import { shellPanelsOf } from '../../../../store/slices/drawer/shellPanelsOf';
 import type { TerminalTabId } from '../../../../shared/types/terminal';
-import { useDeskFollowsTools } from '../../../session/components/SessionDesk/useDeskFollowsTools';
 import { watchSessionDockGrid } from './watchSessionDockGrid';
 
 const WS = brandId<WorkspaceId>({ value: 'ws-harborline' });
 const S1 = brandId<SessionId>({ value: 'session-ledger-core' });
 const S2 = brandId<SessionId>({ value: 'session-notify-relay' });
 
+const TERMINAL_ID = brandId<TerminalTabId>({ value: 'ws:ws-harborline::t1' });
+const TERMINAL_TAB = {
+  id: TERMINAL_ID,
+  owner: { kind: 'workspace', workspaceId: WS },
+  title: 'pnpm dev',
+  cwd: null,
+  status: 'running',
+  createdAt: 0,
+} as const;
+
 const TERMINAL: DrawerRequest = {
   kind: 'terminal',
   sessionId: null,
-  payload: { terminalId: brandId<TerminalTabId>({ value: 'tab-harborline-dev' }) },
+  payload: { terminalId: TERMINAL_ID },
 };
 const BROWSER: DrawerRequest = { kind: 'browser', sessionId: S1, payload: null };
 const MONITOR: DrawerRequest = { kind: 'monitoring', sessionId: null, payload: null };
@@ -116,6 +129,12 @@ const saveRow = ({ sessionId, grid, savedAt = 1 }: SaveParams) => {
   db.rows.set(sessionId, { grid: storedDockGridOf({ grid }), savedAt });
 };
 
+const openTools = ({ entries }: { readonly entries: ReadonlyArray<DrawerRequest> }) => {
+  store.setState({
+    drawerGrid: entries.reduce((grid, entry) => gridAfterOpen({ grid, entry }), EMPTY_DRAWER_GRID),
+  });
+};
+
 const goTo = async ({ sessionId }: { readonly sessionId: SessionId | null }) => {
   state().navigate({ to: sessionId === null ? BOARD_PLACE : sessionPlace({ sessionId }) });
   await settle();
@@ -136,7 +155,8 @@ beforeEach(async () => {
   store.setState({
     currentWorkspaceId: WS,
     currentSessionId: null,
-    sessions: [aSession({ id: S1 }), aSession({ id: S2 })],
+    terminalTabs: { [`ws:${WS}`]: [TERMINAL_TAB] },
+    sessions: [aSession({ id: S1, workspaceId: WS }), aSession({ id: S2, workspaceId: WS })],
     setCurrentSession: async (id: SessionId | null) => {
       store.setState({ currentSessionId: id });
     },
@@ -152,15 +172,26 @@ afterEach(() => {
 });
 
 describe('the dock grid saved on the session', () => {
-  it('brings back the panels, the columns, the widths and the focus of the session', async () => {
-    saveRow({ sessionId: S1, grid: SAVED });
+  it('lays the saved columns and widths of the session onto the tools that are open', async () => {
+    saveRow({ sessionId: S1, grid: { ...SAVED, columns: [[TERMINAL], [BROWSER]] } });
+    openTools({ entries: [BROWSER, TERMINAL] });
     watch();
 
     await goTo({ sessionId: S1 });
 
-    expect(toolKinds()).toEqual([['browser'], ['terminal']]);
+    expect(toolKinds()).toEqual([['terminal'], ['browser']]);
     expect(state().drawerGrid.widths).toEqual({ browser: 760 });
-    expect(panelFocusKeyOf({ panels: shellPanelsOf({ state: state() }) })).toBe('browser');
+  });
+
+  it('keeps the focus of the window, not the one saved on the session', async () => {
+    saveRow({ sessionId: S1, grid: SAVED });
+    openTools({ entries: [BROWSER, TERMINAL] });
+    store.setState((current) => ({ drawerGrid: { ...current.drawerGrid, focus: { at: 'page' } } }));
+    watch();
+
+    await goTo({ sessionId: S1 });
+
+    expect(panelFocusKeyOf({ panels: shellPanelsOf({ state: state() }) })).not.toBe('browser');
   });
 
   it('still loads a row saved before Scripts and Ask joined the grid', async () => {
@@ -174,6 +205,7 @@ describe('the dock grid saved on the session', () => {
       }),
       savedAt: 1,
     });
+    openTools({ entries: [TERMINAL, BROWSER] });
     watch();
 
     await goTo({ sessionId: S1 });
@@ -182,7 +214,7 @@ describe('the dock grid saved on the session', () => {
     expect(state().drawerGrid.widths).toEqual({ browser: 760 });
   });
 
-  it('brings back Scripts and Ask in their own cells', async () => {
+  it('lays out Scripts and Ask in their own cells', async () => {
     const scripts: DrawerRequest = { kind: 'scripts', sessionId: S1, payload: null };
     const ask: DrawerRequest = { kind: 'ask', sessionId: S1, payload: null };
     saveRow({
@@ -195,6 +227,7 @@ describe('the dock grid saved on the session', () => {
         splits: {},
       },
     });
+    openTools({ entries: [BROWSER, TERMINAL, scripts, ask] });
     watch();
 
     await goTo({ sessionId: S1 });
@@ -238,15 +271,16 @@ describe('the dock grid saved on the session', () => {
     expect(db.rows.has(S2)).toBe(false);
   });
 
-  it('parks the tools of a session on a session that saved no grid, and on the Board', async () => {
+  it('keeps the tools open on a session that saved no grid, and on the Board', async () => {
     saveRow({ sessionId: S1, grid: SAVED });
+    openTools({ entries: [BROWSER, TERMINAL] });
     watch();
     await goTo({ sessionId: S1 });
 
     await goTo({ sessionId: S2 });
-    expect(toolKinds()).toEqual([]);
+    expect(toolKinds().flat().sort()).toEqual(['browser', 'terminal']);
     await goTo({ sessionId: null });
-    expect(toolKinds()).toEqual([]);
+    expect(toolKinds().flat().sort()).toEqual(['browser', 'terminal']);
     await goTo({ sessionId: S1 });
     expect(toolKinds()).toEqual([['browser'], ['terminal']]);
   });
@@ -263,7 +297,7 @@ describe('the dock grid saved on the session', () => {
     expect(db.rows.has(S2)).toBe(false);
   });
 
-  it('gives each session its own grid', async () => {
+  it('gives each session its own layout of the same tools', async () => {
     saveRow({ sessionId: S1, grid: SAVED });
     saveRow({
       sessionId: S2,
@@ -275,17 +309,18 @@ describe('the dock grid saved on the session', () => {
         splits: {},
       },
     });
+    openTools({ entries: [BROWSER, TERMINAL] });
     watch();
 
     await goTo({ sessionId: S1 });
     expect(toolKinds()).toEqual([['browser'], ['terminal']]);
     await goTo({ sessionId: S2 });
-    expect(toolKinds()).toEqual([['terminal']]);
+    expect(toolKinds()).toEqual([['terminal'], ['browser']]);
     await goTo({ sessionId: S1 });
     expect(toolKinds()).toEqual([['browser'], ['terminal']]);
   });
 
-  it('leaves Monitor closed when a session saved before a restart opens', async () => {
+  it('opens no tool that the row names and the window has not opened', async () => {
     saveRow({
       sessionId: S1,
       grid: {
@@ -296,6 +331,7 @@ describe('the dock grid saved on the session', () => {
         splits: {},
       },
     });
+    openTools({ entries: [BROWSER] });
     watch();
 
     await goTo({ sessionId: S1 });
@@ -303,7 +339,7 @@ describe('the dock grid saved on the session', () => {
     expect(toolKinds()).toEqual([['browser']]);
   });
 
-  it('brings Monitor back when the session opens again in the same run', async () => {
+  it('keeps Monitor open from one session to the next and back', async () => {
     saveRow({
       sessionId: S2,
       grid: {
@@ -320,7 +356,7 @@ describe('the dock grid saved on the session', () => {
     await settle();
 
     await goTo({ sessionId: S2 });
-    expect(toolKinds().flat()).not.toContain('monitoring');
+    expect(toolKinds().flat()).toContain('monitoring');
     await goTo({ sessionId: S1 });
 
     expect(toolKinds().flat()).toContain('monitoring');
@@ -383,26 +419,39 @@ describe('the dock grid saved on the session', () => {
     expect(toolKinds()).toEqual([['monitoring']]);
   });
 
-  it('shows the grid of the window that wrote last when the session opens again', async () => {
+  it('shows the layout of the window that wrote last when the session opens again', async () => {
     watch();
     await goTo({ sessionId: S1 });
     state().openDrawer(TERMINAL);
+    state().openDrawer(BROWSER);
     await settle();
     await goTo({ sessionId: S2 });
+    expect(toolKinds()).toEqual([['terminal'], ['browser']]);
 
-    saveRow({ sessionId: S1, grid: SAVED, savedAt: Date.now() + 1000 });
+    saveRow({
+      sessionId: S1,
+      grid: { ...SAVED, widths: { browser: 640 } },
+      savedAt: Date.now() + 1000,
+    });
     await goTo({ sessionId: S1 });
 
     expect(toolKinds()).toEqual([['browser'], ['terminal']]);
+    expect(state().drawerGrid.widths).toEqual({ browser: 640 });
   });
 
-  it('reads the newer grid of another window when this window takes the focus', async () => {
+  it('reads the newer layout of another window when this window takes the focus', async () => {
     watch();
     await goTo({ sessionId: S1 });
     state().openDrawer(TERMINAL);
+    state().openDrawer(BROWSER);
     await settle();
+    expect(toolKinds()).toEqual([['terminal'], ['browser']]);
 
-    saveRow({ sessionId: S1, grid: SAVED, savedAt: Date.now() + 1000 });
+    saveRow({
+      sessionId: S1,
+      grid: { ...SAVED, widths: { browser: 640 } },
+      savedAt: Date.now() + 1000,
+    });
     window.dispatchEvent(new Event('focus'));
     await settle();
 
@@ -581,7 +630,7 @@ describe('moving a panel and resetting the layout', () => {
 
     expect(await moving).toBe(false);
     await settle();
-    expect(toolKinds()).toEqual([]);
+    expect(toolKinds()).toEqual(before);
     await goTo({ sessionId: S1 });
     expect(toolKinds()).toEqual(before);
   });
@@ -707,169 +756,41 @@ describe('moving a panel and resetting the layout', () => {
   });
 });
 
-describe('the face saved with the grid', () => {
-  it('saves the Desk face of a session inside its grid row', async () => {
-    watch();
-    await goTo({ sessionId: S1 });
-
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    await settle();
-
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ version: 2, face: 'desk' });
-    expect(db.rows.has(S2)).toBe(false);
-  });
-
-  it('keeps the face on screen when its save fails, says so, and the next switch saves it', async () => {
-    watch();
-    await goTo({ sessionId: S1 });
-    db.failSaves = true;
-
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    await settle();
-
-    expect(state().sessionFace[S1]).toBe('desk');
-    expect(db.rows.has(S1)).toBe(false);
-    expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionId: S1, title: "Couldn't save the panels of this session" }),
-    );
-
-    db.failSaves = false;
-    state().setSessionFace({ sessionId: S1, face: 'overview' });
-    await settle();
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    await settle();
-
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ face: 'desk' });
-  });
-
-  it('reopens each session on the face it was left on', async () => {
-    saveRow({ sessionId: S1, grid: SAVED });
-    db.rows.set(S2, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
-    watch();
-
-    await goTo({ sessionId: S2 });
-    expect(state().sessionFace[S2]).toBe('desk');
-    await goTo({ sessionId: S1 });
-    expect(state().sessionFace[S1]).toBe('overview');
-  });
-
-  it('reads the face of a session that is not open', async () => {
-    db.rows.set(S2, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
-    watch();
-    await goTo({ sessionId: S1 });
-
-    expect(await state().recallSessionFace({ sessionId: S2 })).toBe('desk');
-    expect(state().sessionFace[S2]).toBe('desk');
-    expect(state().currentSessionId).toBe(S1);
-  });
-
-  it('reads a row saved without the face as the overview', async () => {
-    saveRow({ sessionId: S1, grid: SAVED });
-    watch();
-
-    await goTo({ sessionId: S1 });
-
-    expect(state().sessionFace[S1]).toBe('overview');
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).not.toHaveProperty('face');
-  });
-
-  it('opens the Desk when an Overview row comes back with its tools', async () => {
-    saveRow({ sessionId: S1, grid: SAVED });
-    watch();
-    const follower = renderHook(() => useDeskFollowsTools({ sessionId: S1 }));
-
-    await goTo({ sessionId: S1 });
-
-    expect(toolKinds()).toEqual([['browser'], ['terminal']]);
-    expect(state().sessionFace[S1]).toBe('desk');
-    follower.unmount();
-  });
-
-  it('keeps a face picked while the row was still loading', async () => {
-    saveRow({ sessionId: S1, grid: SAVED });
-    db.holdLoads = true;
-    watch();
-    await goTo({ sessionId: S1 });
-
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    db.heldLoads.splice(0).forEach((release) => release());
-    await settle();
-
-    expect(state().sessionFace[S1]).toBe('desk');
-  });
-
-  it('keeps the Overview picked while a Desk row was loading, even with no face set before', async () => {
-    db.rows.set(S1, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
-    db.holdLoads = true;
-    watch();
-    await goTo({ sessionId: S1 });
-
-    state().setSessionFace({ sessionId: S1, face: 'overview' });
-    db.heldLoads.splice(0).forEach((release) => release());
-    await settle();
-
-    expect(state().sessionFace[S1] ?? 'overview').toBe('overview');
-  });
-
-  it('keeps a face picked away and back while the row was loading', async () => {
-    db.rows.set(S2, { grid: storedDockGridOf({ grid: SAVED }), savedAt: 1 });
-    watch();
-    await goTo({ sessionId: S1 });
-    state().setSessionFace({ sessionId: S2, face: 'desk' });
-    db.holdLoads = true;
-
-    const read = state().recallSessionFace({ sessionId: S2 });
-    state().setSessionFace({ sessionId: S2, face: 'overview' });
-    state().setSessionFace({ sessionId: S2, face: 'desk' });
-    await settle();
-    db.heldLoads.splice(0).forEach((release) => release());
-
-    expect(await read).toBeNull();
-    expect(state().sessionFace[S2]).toBe('desk');
-  });
-
-  it('saves the Overview picked right after a Desk row came back', async () => {
-    db.rows.set(S1, { grid: storedDockGridOf({ grid: SAVED, face: 'desk' }), savedAt: 1 });
-    stop = watchSessionDockGrid({ store, delayMs: 300 });
-    await goTo({ sessionId: S1 });
-    expect(state().sessionFace[S1]).toBe('desk');
-
-    state().setSessionFace({ sessionId: S1, face: 'overview' });
-    await vi.advanceTimersByTimeAsync(400);
-
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).not.toHaveProperty('face');
-  });
-
-  it('keeps the Desk face in the row a move or a reset writes', async () => {
-    watch();
-    await goTo({ sessionId: S1 });
-    state().openDrawer(TERMINAL);
-    state().openDrawer(BROWSER);
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    await settle();
-
-    await state().moveDockPanel({ sessionId: S1, kind: 'browser', target: { at: 'page' } });
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ face: 'desk' });
-
-    await state().resetDockGrid({ sessionId: S1 });
-    expect(JSON.parse(db.rows.get(S1)?.grid ?? '{}')).toMatchObject({ face: 'desk' });
-  });
-
-  it('keeps the face it had when the row cannot be read, and says so', async () => {
-    watch();
-    await goTo({ sessionId: S1 });
-    state().setSessionFace({ sessionId: S1, face: 'desk' });
-    db.holdLoads = false;
-    const { getSessionDockGrid } = await import('@goodboy/db');
-    vi.mocked(getSessionDockGrid).mockRejectedValueOnce(new Error('disk gone'));
-
-    expect(await state().recallSessionFace({ sessionId: S1 })).toBeNull();
-    expect(state().sessionFace[S1]).toBe('desk');
-    expect(reportError).toHaveBeenCalledWith(
-      expect.objectContaining({
-        sessionId: S1,
-        title: "Couldn't load the last view of this session",
+describe('a row saved with a face and a detail by an older build', () => {
+  it('reads the layout and writes the next row without the face', async () => {
+    db.rows.set(S1, {
+      grid: JSON.stringify({
+        version: 2,
+        columns: [[BROWSER]],
+        used: ['browser'],
+        focus: { at: 'page' },
+        widths: { browser: 520 },
+        face: 'desk',
+        detail: [{ kind: 'transcript', agentId: 'agent-implementer' }],
       }),
-    );
+      savedAt: 1,
+    });
+    openTools({ entries: [BROWSER] });
+    watch();
+
+    await goTo({ sessionId: S1 });
+    state().resizeDockColumn({ kind: 'browser', width: 600 });
+    await settle();
+
+    expect(state().drawerGrid.widths).toEqual({ browser: 600 });
+    const written = JSON.parse(db.rows.get(S1)?.grid ?? '{}');
+    expect(written).not.toHaveProperty('face');
+    expect(written).not.toHaveProperty('detail');
+    expect(state().drawer?.kind).not.toBe('transcript');
+  });
+
+  it('opens no tool and no agent when an Overview row names tools', async () => {
+    saveRow({ sessionId: S1, grid: SAVED });
+    watch();
+
+    await goTo({ sessionId: S1 });
+
+    expect(toolKinds()).toEqual([]);
+    expect(state().drawer).toBeNull();
   });
 });

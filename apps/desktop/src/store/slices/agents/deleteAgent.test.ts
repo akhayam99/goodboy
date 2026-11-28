@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { brandId } from '@goodboy/types';
 import type {
   Agent,
   AgentId,
@@ -67,12 +68,12 @@ import { deleteAgent } from './deleteAgent';
 import { purgedAgentIds } from '../sessions/sessionMutators';
 import { registerTreeStopPort, type TreeStopPort } from '../../../features/auto/treeStopPort';
 
-const SID = 'sess-1' as SessionId;
-const DOOMED = 'resolver-1' as AgentId;
-const RUN = 'run-1' as ProviderRunId;
-const WID = 'ws-1' as WorkspaceId;
-const MOUNT_TWO = 'mount-two' as MountId;
-const MOUNT_THREE = 'mount-three' as MountId;
+const SID = brandId<SessionId>({ value: 'sess-1' });
+const DOOMED = brandId<AgentId>({ value: 'resolver-1' });
+const RUN = brandId<ProviderRunId>({ value: 'run-1' });
+const WID = brandId<WorkspaceId>({ value: 'ws-1' });
+const MOUNT_TWO = brandId<MountId>({ value: 'mount-two' });
+const MOUNT_THREE = brandId<MountId>({ value: 'mount-three' });
 const PATH_TWO = '/repo/two';
 const PATH_THREE = '/repo/three';
 const AUTO_TREE = { id: 'tree-1', phase: 'waiting', stopState: 'none' };
@@ -405,6 +406,45 @@ describe('deleteAgent', () => {
 
     expect(order).toEqual(['poll-1', 'poll-2', 'poll-3', 'purge']);
     expect(hoisted.emitNotification).not.toHaveBeenCalled();
+  });
+
+  describe('the session state after the delete', () => {
+    const SURVIVOR = brandId<AgentId>({ value: 'survivor-1' });
+    const ERROR_STATE = {
+      kind: 'error',
+      message: 'The agent stopped',
+      failedAt: '2026-07-25T09:00:00.000Z',
+    };
+
+    const seedSurvivor = ({ status }: { readonly status: Agent['status'] }) => {
+      const harness = makeStore();
+      Object.assign(harness.state.agentTurnState as Record<string, unknown>, {
+        [SURVIVOR]: ERROR_STATE,
+      });
+      hoisted.invokeAgentList.mockResolvedValue([resolver({ id: SURVIVOR, status })]);
+      hoisted.listResolveAttempts.mockResolvedValue([]);
+      return harness;
+    };
+
+    it('keeps the failure of a survivor whose row still says failed', async () => {
+      const { state, get, set } = seedSurvivor({ status: 'failed' });
+
+      await deleteAgent(set, get)(SID, DOOMED);
+
+      expect((state.sessions as ReadonlyArray<{ state: { kind: string } }>)[0]?.state.kind).toBe(
+        'error',
+      );
+    });
+
+    it('drops an error whose agent row completed after it', async () => {
+      const { state, get, set } = seedSurvivor({ status: 'completed' });
+
+      await deleteAgent(set, get)(SID, DOOMED);
+
+      expect((state.sessions as ReadonlyArray<{ state: { kind: string } }>)[0]?.state.kind).toBe(
+        'idle',
+      );
+    });
   });
 
   it('purges anyway and tells the user when the run refuses to stop', async () => {

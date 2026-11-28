@@ -272,6 +272,45 @@ describe('detachWorkflowFromSession', () => {
     },
   );
 
+  describe('the session state after the detach', () => {
+    const ERROR_STATE = {
+      kind: 'error',
+      message: 'The agent stopped',
+      failedAt: '2026-01-01T00:00:00Z',
+    };
+
+    it('keeps the failure of a survivor whose row still says failed', async () => {
+      const { detach, state } = buildHarness({
+        executionMode: 'static',
+        isPreset: true,
+        agents: KIND_CASES[0]!.agents,
+      });
+      invokeAgentListSpy.mockReset();
+      invokeAgentListSpy.mockResolvedValueOnce([
+        { ...agent({ id: 'standalone' }), status: 'failed' },
+        agent({ id: 'other-run-agent', workflowRunId: OTHER_RUN_ID }),
+      ]);
+      Object.assign(state.agentTurnState, { standalone: ERROR_STATE });
+
+      await detach(SESSION_ID, RUN_ID);
+
+      expect(state.sessions[0]).toMatchObject({ state: { kind: 'error' } });
+    });
+
+    it('drops an error whose agent row completed after it', async () => {
+      const { detach, state } = buildHarness({
+        executionMode: 'static',
+        isPreset: true,
+        agents: KIND_CASES[0]!.agents,
+      });
+      Object.assign(state.agentTurnState, { standalone: ERROR_STATE });
+
+      await detach(SESSION_ID, RUN_ID);
+
+      expect(state.sessions[0]).toMatchObject({ state: { kind: 'idle' } });
+    });
+  });
+
   it('reloads open questions without touching the slot when the run asked none', async () => {
     const { detach } = buildHarness({
       executionMode: 'static',
