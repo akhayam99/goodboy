@@ -181,7 +181,8 @@
         "Overview and activity",
         "Switch between tasks",
         "Search and navigation",
-        "The board"
+        "The board",
+        "Calendar and reminders"
       ],
       "mocks": ["board"],
       "guides": [
@@ -200,6 +201,10 @@
         {
           "area": "board",
           "label": "The board"
+        },
+        {
+          "area": "calendar",
+          "label": "Calendar and reminders"
         }
       ],
       "items": [
@@ -349,6 +354,31 @@
           "group": "The board",
           "also": "bulk select",
           "shown": true
+        },
+        {
+          "title": "Your day and your week",
+          "text": "Calendar in the places rail shows today's meetings as one list, with the start, the length and when each one begins.",
+          "group": "Calendar and reminders",
+          "also": "calendar",
+          "shown": true
+        },
+        {
+          "title": "Before a call",
+          "text": "Click a meeting to open its panel beside the page, with the time, where it comes from and the host of its call link.",
+          "group": "Calendar and reminders",
+          "also": "before a call"
+        },
+        {
+          "title": "The call chip",
+          "text": "A small window opens at the top of your screen, over every app, five minutes before a meeting with a call link.",
+          "group": "Calendar and reminders",
+          "also": "call chip"
+        },
+        {
+          "title": "Reminders",
+          "text": "Write a reminder under the day and press Enter.",
+          "group": "Calendar and reminders",
+          "also": "reminders"
         }
       ]
     },
