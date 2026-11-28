@@ -68,6 +68,7 @@ describe('the column doors', () => {
 
   it('opens the Calendar door through its own action', () => {
     const actions = {
+      openHome: vi.fn(),
       openBoard: vi.fn(),
       openInbox: vi.fn(),
       openChat: vi.fn(),
