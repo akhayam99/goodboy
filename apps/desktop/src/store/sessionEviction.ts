@@ -432,6 +432,8 @@ export const NON_SESSION_STATE_KEYS = [
   'calendarSources',
   'calendarRoles',
   'calendarDay',
+  'calendarSourcesError',
+  'calendarEventsError',
   'calendarReminders',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 

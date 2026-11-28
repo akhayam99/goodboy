@@ -1,27 +1,35 @@
-import { Notice } from '@goodboy/ui';
-import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../../../store';
+import { CalendarProblem } from './CalendarProblem';
+import { MacAccessLostNotice } from './MacAccessLostNotice';
 
-export const FailedSourcesNotice = () => {
-  const labels = useAppStore(
-    useShallow((state) =>
-      (state.calendarDay?.failedSources ?? []).map(
-        (failure) =>
-          state.calendarSources.find((source) => source.id === failure.sourceId)?.label ??
-          'A calendar',
-      ),
-    ),
-  );
-  if (labels.length === 0) {
+type Props = {
+  readonly onRetry: () => Promise<void>;
+};
+
+const FALLBACK_LABEL = 'A calendar';
+
+export const FailedSourcesNotice = ({ onRetry }: Props) => {
+  const failures = useAppStore((state) => state.calendarDay?.failedSources);
+  const sources = useAppStore((state) => state.calendarSources);
+  if (failures === undefined || failures.length === 0) {
     return null;
   }
   return (
-    <Notice
-      tone="warning"
-      placement="inline"
-      role="status"
-      title={`Couldn't read ${labels.join(', ')}`}
-      body="The other calendars still show."
-    />
+    <div className="flex min-w-0 flex-col gap-2">
+      {failures.map((failure) => {
+        const label = sources.find((source) => source.id === failure.sourceId)?.label;
+        const name = label ?? FALLBACK_LABEL;
+        return failure.kind === 'no_access' ? (
+          <MacAccessLostNotice key={failure.sourceId} label={name} onReconnected={onRetry} />
+        ) : (
+          <CalendarProblem
+            key={failure.sourceId}
+            title={`Couldn't read ${name}`}
+            body={failure.message}
+            onRetry={onRetry}
+          />
+        );
+      })}
+    </div>
   );
 };

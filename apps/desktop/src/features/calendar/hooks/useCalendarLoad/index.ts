@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { startPoll } from '../../../../shared/lib/usePoll/startPoll';
@@ -13,7 +13,12 @@ type Params = {
   readonly now: number;
 };
 
-export const useCalendarLoad = ({ workspaceId, now }: Params): boolean => {
+type CalendarLoad = {
+  readonly isReady: boolean;
+  readonly reload: () => Promise<void>;
+};
+
+export const useCalendarLoad = ({ workspaceId, now }: Params): CalendarLoad => {
   const [isReady, setIsReady] = useState(false);
   const sources = useAppStore((state) => state.calendarSources);
   const roles = useAppStore((state) => state.calendarRoles);
@@ -50,5 +55,13 @@ export const useCalendarLoad = ({ workspaceId, now }: Params): boolean => {
     return startPoll({ run, everyMs: RELOAD_EVERY_MS, gate: 'visible', isImmediate: true });
   }, [isReady, sources, roles, today]);
 
-  return isReady;
+  const reload = useCallback(async (): Promise<void> => {
+    const state = useAppStore.getState();
+    await state.loadCalendarSources();
+    await useAppStore
+      .getState()
+      .loadCalendarEvents({ range: weekRangeOf({ now: today }), listEvents: listCalendarEvents });
+  }, [today]);
+
+  return { isReady, reload };
 };

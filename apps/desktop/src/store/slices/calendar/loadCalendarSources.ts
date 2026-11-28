@@ -1,4 +1,5 @@
 import { listCalendarRoles, listCalendarSources } from '@goodboy/db';
+import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { SliceDeps } from '../../slice-types';
@@ -15,11 +16,12 @@ export const loadCalendarSources = ({ set, get }: SliceDeps) => {
       if (!claimed.isCurrent()) {
         return;
       }
-      set({ calendarSources: sources, calendarRoles: roles });
+      set({ calendarSources: sources, calendarRoles: roles, calendarSourcesError: null });
     } catch (error) {
       if (!claimed.isCurrent()) {
         return;
       }
+      set({ calendarSourcesError: formatError(error) });
       await get().reportError({
         recovery: CHECK_STATE,
         title: "Couldn't load your calendars",

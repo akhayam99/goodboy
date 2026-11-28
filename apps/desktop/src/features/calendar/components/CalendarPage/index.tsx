@@ -31,7 +31,7 @@ const CLOCK_MS = 30_000;
 
 export const CalendarPage = ({ workspaceId }: Props) => {
   const now = useNow(CLOCK_MS);
-  const isReady = useCalendarLoad({ workspaceId, now });
+  const { isReady, reload } = useCalendarLoad({ workspaceId, now });
   const [view, setView] = useState<CalendarView>('today');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const roles = useAppStore((state) => state.calendarRoles);
@@ -85,6 +85,7 @@ export const CalendarPage = ({ workspaceId }: Props) => {
         <CalendarBody
           view={view}
           isReady={isReady}
+          onRetry={reload}
           rows={rows}
           events={events}
           roles={roles}

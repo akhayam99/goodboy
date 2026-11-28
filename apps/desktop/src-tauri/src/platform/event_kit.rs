@@ -13,6 +13,8 @@ use crate::platform::web_site_data::text_of;
 extern "C" {}
 
 const ENTITY_TYPE_EVENT: usize = 0;
+const STATUS_FULL_ACCESS: isize = 3;
+const WARM_UP_WAIT: Duration = Duration::from_secs(5);
 
 fn non_null(object: *mut AnyObject) -> Option<*mut AnyObject> {
     (!object.is_null()).then_some(object)
@@ -59,16 +61,29 @@ fn ask_for_full_access(store: &AnyObject, handler: &block2::Block<dyn Fn(Bool, *
     };
 }
 
-pub(crate) fn request_full_access(wait: Duration) -> Option<bool> {
-    let store = new_store_without_prompt()?;
+fn ask_and_wait(store: &AnyObject, wait: Duration) -> Option<bool> {
     let (sender, receiver) = mpsc::sync_channel(1);
     let handler = RcBlock::new(move |is_granted: Bool, _error: *mut AnyObject| {
         let _ = sender.try_send(is_granted.as_bool());
     });
-    ask_for_full_access(&store, &handler);
-    let answer = receiver.recv_timeout(wait).ok();
+    ask_for_full_access(store, &handler);
+    receiver.recv_timeout(wait).ok()
+}
+
+pub(crate) fn request_full_access(wait: Duration) -> Option<bool> {
+    let store = new_store_without_prompt()?;
+    let answer = ask_and_wait(&store, wait);
     drop(store);
     answer
+}
+
+fn new_ready_store() -> Option<Retained<AnyObject>> {
+    let store = new_store_without_prompt()?;
+    if authorization_status() == STATUS_FULL_ACCESS {
+        let _ = ask_and_wait(&store, WARM_UP_WAIT);
+        let _: () = unsafe { msg_send![&*store, refreshSourcesIfNecessary] };
+    }
+    Some(store)
 }
 
 fn calendar_of(calendar: *mut AnyObject) -> Option<RawCalendar> {
@@ -81,7 +96,7 @@ fn calendar_of(calendar: *mut AnyObject) -> Option<RawCalendar> {
 
 pub(crate) fn calendars() -> Vec<RawCalendar> {
     autoreleasepool(|_| {
-        let Some(store) = new_store_without_prompt() else {
+        let Some(store) = new_ready_store() else {
             return Vec::new();
         };
         let list: *mut AnyObject =
@@ -131,7 +146,7 @@ fn event_of(event: *mut AnyObject) -> Option<RawEvent> {
 
 pub(crate) fn events(from_ms: i64, to_ms: i64) -> Vec<RawEvent> {
     autoreleasepool(|_| {
-        let Some(store) = new_store_without_prompt() else {
+        let Some(store) = new_ready_store() else {
             return Vec::new();
         };
         let every_calendar: *mut AnyObject = std::ptr::null_mut();
