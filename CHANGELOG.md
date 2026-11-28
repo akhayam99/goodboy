@@ -12,6 +12,34 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.45.0
+
+Your calendar gets a place in Goodboy, a chip opens before each call, and reminders land in Needs you.
+
+This version updates your data in one direction. To go back to 0.44, restore the backup Goodboy made before updating.
+
+### New
+
+#### A Calendar place
+<!-- gb area=app pr=2474 -->
+
+Calendar sits on the rail between Chat and Connections. Today lists each meeting with its time and state, and Week shows the working week as a grid. A meeting opens its panel with Join call, Copy link and the sessions that need you before it.
+
+#### Connect your calendars
+<!-- gb area=integrations pr=2474 -->
+
+Connect the calendars on this Mac or paste a calendar link. Each calendar shows, shows as Busy only, counts as Focus or hides.
+
+#### A chip before each call
+<!-- gb area=app pr=2474 -->
+
+Five minutes before a call with a link, a small chip opens over every app with Join call and who needs you. During the call Goodboy holds its notices, and the chip lists what you missed when it ends.
+
+#### Reminders
+<!-- gb area=app pr=2474 -->
+
+Type a reminder on the Calendar page, or ask for one when CI is green from a pull request menu. A reminder that comes due lands in Needs you, where you can snooze it or mark it done.
+
 ## Goodboy v0.44.1
 
 A workspace opens on a Home page, the diff shows comments with their state, tools stay open from screen to screen, and your iPhone sees every workspace.

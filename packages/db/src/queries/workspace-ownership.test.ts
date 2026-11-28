@@ -16,6 +16,7 @@ const FATES: Readonly<Record<string, Fate>> = {
   projects: 'moved',
   sessions: 'moved',
   session_context_items: 'moved',
+  reminders: 'moved',
   integration_bindings: 'moved',
   workspace_starred_issues: 'moved',
   workspace_profiles: 'deleted-by-merge',

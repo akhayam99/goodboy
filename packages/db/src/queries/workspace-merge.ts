@@ -240,6 +240,10 @@ const planBindingMerge = ({
         params: [targetId, source.id],
       },
       {
+        sql: 'UPDATE reminders SET workspace_id = ? WHERE workspace_id = ?',
+        params: [targetId, source.id],
+      },
+      {
         sql: `INSERT OR IGNORE INTO workspace_starred_issues
            (workspace_id, provider, external_id, identifier, container, title, url, state,
             state_label, starred_at, refreshed_at)

@@ -45,6 +45,7 @@ export const columnPlaceOf = ({
 const STUDIO_OVER_SESSION: ReadonlySet<ColumnPlace> = new Set<ColumnPlace>([
   'inbox',
   'chat',
+  'calendar',
   'connections',
   'workflows',
   'terminal',

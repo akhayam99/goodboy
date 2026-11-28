@@ -4,6 +4,7 @@ import { tintClasses, type Tone } from '../tint';
 
 export type StatusDotProps = {
   readonly tone: Tone;
+  readonly color?: string;
   readonly size?: 'sm' | 'md';
   readonly pulsing?: boolean;
   readonly isRing?: boolean;
@@ -20,6 +21,7 @@ const sizeClasses: Record<'sm' | 'md', string> = {
 
 export const StatusDot = ({
   tone,
+  color,
   size = 'md',
   pulsing,
   isRing = false,
@@ -28,7 +30,7 @@ export const StatusDot = ({
   ariaLabel,
   className,
 }: StatusDotProps) => {
-  const dot = tintClasses(tone).dot;
+  const dot = color === undefined ? tintClasses(tone).dot : '';
   const dim = sizeClasses[size];
   const ariaProps =
     ariaLabel != null
@@ -47,6 +49,7 @@ export const StatusDot = ({
           pulsing ? 'motion-safe:animate-soft-pulse' : '',
           className,
         )}
+        {...(color !== undefined && !isRing && { style: { backgroundColor: color } })}
         {...ariaProps}
       />
     </OptionalTooltip>

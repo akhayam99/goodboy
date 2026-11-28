@@ -6,3 +6,5 @@ export const createBrowserVisitsSlice = ({ set, get }: SliceDeps) => {
     loadBrowserVisits: loadVisits({ set, get }),
   };
 };
+
+export { browserVisitsInitialState } from './state';

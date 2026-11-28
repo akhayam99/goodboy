@@ -26,7 +26,7 @@ import { CONTEXT_SLOT_KIND } from './kinds/contextSlot';
 import { PLAN_COMMENTS_KIND } from './kinds/planComments';
 import { PROJECT_ASK_KIND } from './kinds/projectAsk';
 import { PROJECT_KIND } from './kinds/project';
-import { PULL_REQUEST_KIND } from './kinds/pullRequest';
+import { PULL_REQUEST_WITH_REMINDER_KIND } from './kinds/pullRequestWithReminder';
 import { CHAT_KIND } from './kinds/chat';
 import { CHATS_KIND } from './kinds/chats';
 import { COMMIT_KIND } from './kinds/commit';
@@ -46,6 +46,7 @@ import { REVIEW_COMMENT_KIND } from './kinds/reviewComment';
 import { WRITE_REVIEW_KIND } from './kinds/writeReview';
 import { SUGGESTION_KIND } from './kinds/suggestion';
 import { ACTION_CARD_KIND } from './kinds/actionCard';
+import { REMINDER_KIND } from './kinds/reminder';
 import { resolveActions } from './resolveActions';
 import { ACTION_GROUPS, type ActionDefinition } from './types';
 
@@ -60,7 +61,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['planPart', PLAN_PART_KIND.actions],
   ['artifact', ARTIFACT_KIND.actions],
   ['record', RECORD_KIND.actions],
-  ['pullRequest', PULL_REQUEST_KIND.actions],
+  ['pullRequest', PULL_REQUEST_WITH_REMINDER_KIND.actions],
   ['commit', COMMIT_KIND.actions],
   ['diffFile', DIFF_FILE_KIND.actions],
   ['exploreFile', EXPLORE_FILE_KIND.actions],
@@ -98,6 +99,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['writeReview', WRITE_REVIEW_KIND.actions],
   ['suggestion', SUGGESTION_KIND.actions],
   ['actionCard', ACTION_CARD_KIND.actions],
+  ['reminder', REMINDER_KIND.actions],
 ];
 
 describe('action registry', () => {

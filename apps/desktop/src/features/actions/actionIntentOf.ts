@@ -77,6 +77,7 @@ const PRIMARY_VERBS: ReadonlySet<string> = new Set([
   'run',
   'run all',
   'continue',
+  'join call',
 ]);
 
 export const actionIntentOf = ({ verb }: Params): ButtonIntent => {

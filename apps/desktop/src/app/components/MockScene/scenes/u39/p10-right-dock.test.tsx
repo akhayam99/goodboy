@@ -198,6 +198,7 @@ describe('the ux39 right dock scenes', () => {
       'inbox',
       'workflows',
       'chat',
+      'calendar',
       'connections',
       'impact',
       'settings',

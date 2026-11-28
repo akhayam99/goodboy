@@ -96,6 +96,13 @@ export const SETTING_ROWS: ReadonlyArray<SettingRow> = [
     band: 'Notifications',
   }),
   row({
+    key: 'call-chip',
+    label: 'Show the call chip',
+    help: 'A small window over every app before a call with a link.',
+    page: GENERAL,
+    band: 'Notifications',
+  }),
+  row({
     key: 'open-editor',
     label: 'Editor',
     help: 'Opens session worktrees.',

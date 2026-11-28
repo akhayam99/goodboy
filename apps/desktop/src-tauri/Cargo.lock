@@ -1625,10 +1625,11 @@ dependencies = [
 
 [[package]]
 name = "goodboy-desktop"
-version = "0.44.1"
+version = "0.45.0"
 dependencies = [
  "base64 0.22.1",
  "block2",
+ "chrono",
  "core-foundation-sys",
  "dirs",
  "keyring",

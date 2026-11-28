@@ -181,6 +181,14 @@ const STUDIOS_SAVED: ReadonlyArray<Row> = [
       location: READ_BACK(textOf({ place: BOARD_PLACE, studio: storedStudioOf({ studio }) })),
     }),
   ]),
+  [
+    'the calendar page, saved as the place behind it',
+    JSON.stringify({
+      location: READ_BACK(
+        textOf({ place: BOARD_PLACE, studio: storedStudioOf({ studio: { kind: 'calendar' } }) }),
+      ),
+    }),
+  ],
 ];
 
 describe('rehearsal: the previous release opens every place this build saves', () => {

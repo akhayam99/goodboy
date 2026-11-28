@@ -32,12 +32,12 @@ import {
 import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createSlackDraftsSlice } from './slices/slack-drafts';
-import { createBudgetSlice } from './slices/budget';
+import { createBudgetSlice, type ProviderSpendEntry } from './slices/budget';
 import { createBrowserSlice } from './slices/browser';
 import { createBrowserHostSlice } from './slices/browser-host';
-import { createBrowserVisitsSlice } from './slices/browser-visits';
-import { createMonitoringSlice } from './slices/monitoring';
-import { monitoringInitialState } from './slices/monitoring/state';
+import { browserVisitsInitialState, createBrowserVisitsSlice } from './slices/browser-visits';
+import { calendarInitialState, createCalendarSlice } from './slices/calendar';
+import { createMonitoringSlice, monitoringInitialState } from './slices/monitoring';
 import { createStorageSlice } from './slices/storage';
 import { createDiffCommentsSlice } from './slices/diff-comments';
 import { createFileVersionsSlice } from './slices/file-versions';
@@ -109,7 +109,6 @@ import { backupInitialState } from './slices/backup/state';
 import { budgetInitialState } from './slices/budget/state';
 import { browserInitialState } from './slices/browser/state';
 import { browserHostInitialState } from './slices/browser-host/state';
-import { browserVisitsInitialState } from './slices/browser-visits/state';
 import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
 import { createSessionsSlice } from './slices/sessions';
@@ -178,7 +177,6 @@ import { askInitialState } from './slices/ask/state';
 import { drawerInitialState } from './slices/drawer/state';
 import { dockScopeInitialState } from './slices/drawer/dockScopeState';
 import { bugReportDraftInitialState } from './slices/bugReportDraft/state';
-import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
 import { sessionFiltersInitialState } from './slices/sessionFilters/state';
 import { workspacesInitialState } from './slices/workspaces/state';
@@ -346,6 +344,7 @@ export type AppStore = AppState &
   ReturnType<typeof createBrowserSlice> &
   ReturnType<typeof createBrowserHostSlice> &
   ReturnType<typeof createBrowserVisitsSlice> &
+  ReturnType<typeof createCalendarSlice> &
   ReturnType<typeof createMonitoringSlice> &
   ReturnType<typeof createGithubSlice> &
   ReturnType<typeof createMountRequestSlice> &
@@ -380,6 +379,7 @@ const initialState: AppState = {
   ...browserInitialState,
   ...browserHostInitialState,
   ...browserVisitsInitialState,
+  ...calendarInitialState,
   ...monitoringInitialState,
   ...createInitialSessionViewState({}),
   ...savedProjectModelsInitialState,
@@ -491,6 +491,7 @@ const appStoreApi = createStore<AppStore>((set, get) => ({
   ...createBrowserSlice({ set, get }),
   ...createBrowserHostSlice({ set, get }),
   ...createBrowserVisitsSlice({ set, get }),
+  ...createCalendarSlice({ set, get }),
   ...createMonitoringSlice({ set, get }),
   ...createStorageSlice({ set, get }),
   ...createDiffCommentsSlice({ set, get }),

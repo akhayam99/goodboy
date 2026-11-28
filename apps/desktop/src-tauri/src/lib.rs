@@ -14,6 +14,7 @@ mod branch_remote;
 mod bridge;
 mod browser;
 mod budget;
+mod calendar;
 mod changelog_images;
 mod chat;
 mod chat_images;
@@ -284,6 +285,8 @@ pub fn run() {
         .manage(browser::BrowserRegistry::default())
         .manage(browser::BrowserFavicons::default())
         .manage(browser::PageKeys::default())
+        .manage(calendar::alerts_runner::CallAlerts::default())
+        .manage(calendar::alerts_commands::ChipView::default())
         .setup(move |app| {
             use tauri::Manager;
             logging::init(app.handle());
@@ -302,6 +305,12 @@ pub fn run() {
             });
             browser::start_lifecycle(app.handle().clone());
             browser::start_page_keys(app.handle().clone());
+            calendar::alerts_runner::start(
+                app.handle().clone(),
+                app.state::<calendar::alerts_runner::CallAlerts>()
+                    .inner()
+                    .clone(),
+            );
             if !cfg!(debug_assertions) {
                 window_heartbeat::start(
                     app.handle().clone(),
@@ -359,6 +368,19 @@ pub fn run() {
         .invoke_handler(browser::refuse_browser_pages(tauri::generate_handler![
             secrets::secret_set,
             secrets::secret_delete,
+            calendar::commands::calendar_access_state,
+            calendar::commands::calendar_request_access,
+            calendar::commands::calendar_list_calendars,
+            calendar::commands::calendar_list_events,
+            calendar::commands::calendar_ics_add,
+            calendar::commands::calendar_ics_remove,
+            calendar::alerts_commands::calendar_alerts_arm,
+            calendar::alerts_commands::calendar_alerts_snooze,
+            calendar::alerts_commands::calendar_chip_show,
+            calendar::alerts_commands::calendar_chip_hide,
+            calendar::alerts_commands::calendar_chip_view,
+            calendar::alerts_commands::calendar_chip_resize,
+            calendar::alerts_commands::calendar_chip_act,
             editor::detect_editors,
             editor::detect_browsers,
             editor::open_in_editor,

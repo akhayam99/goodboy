@@ -33,8 +33,6 @@
         "src/features/chat/spawn-from-comment.ts": ["exports"],
         "src/features/chat/utils/transcript-items-trace.ts": ["exports"],
         "src/features/companion/mobileConfinement.ts": ["exports"],
-        "src/store/slices/drawer/dockGridMemory/storedDockGrid.ts": ["exports"],
-        "src/store/slices/auto-view/legacyNoteTextOf.ts": ["exports"],
         "src/features/companion/actions/actionLedger.ts": ["exports"],
         "src/features/companion/actions/actionLimits.ts": ["exports"],
         "src/features/companion/actions/limitUndos.ts": ["exports"],

@@ -26,3 +26,5 @@ export const createMonitoringSlice = ({ set, get }: SliceDeps) => {
     recordOrphansSwept: recordOrphansSwept(set),
   };
 };
+
+export { monitoringInitialState } from './state';

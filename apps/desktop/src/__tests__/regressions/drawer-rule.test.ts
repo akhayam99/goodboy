@@ -20,6 +20,7 @@ const RAW_FRAME_NUMBERS = /\b(12|384|400|464|480|516|528|560|612|624|720)\b/;
 const OWN_WIDTH_RULES = /\b(ResizeObserver|matchMedia|innerWidth|useMeasuredWidth)\b/;
 const COLUMN_HOSTS = [
   join('app', 'components', 'StudioFrame', 'index.tsx'),
+  join('features', 'calendar', 'components', 'CalendarPage', 'index.tsx'),
   join('features', 'inbox', 'components', 'InboxStudio', 'InboxStudioLayout.tsx'),
   join('features', 'workflows', 'components', 'WorkflowsPanel', 'index.tsx'),
   join('features', 'workspace-chat', 'components', 'ChatRoom', 'index.tsx'),

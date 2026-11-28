@@ -12,8 +12,6 @@ use super::BridgeError;
 const IDENTITY_FILE: &str = "companion.json";
 const DEFAULT_PHONE_NAME: &str = "iPhone";
 const DEFAULT_DEVICE_LABEL: &str = "Mac";
-#[cfg(test)]
-const LEGACY_ALLOW_LIST_READ_UNTIL: &str = "0.45.0";
 const NAME_MAX_CHARS: usize = 48;
 const SEEN_WRITE_EVERY_MS: i64 = 60_000;
 const VAULT_READ_ATTEMPTS: u32 = 3;
@@ -39,10 +37,10 @@ impl IdentityFault {
     pub fn message(self) -> &'static str {
         match self {
             Self::FileUnreadable => {
-                "The pairing file could not be read. The old file was kept aside. Reset pairing to start again, then scan a new code on every iPhone."
+                "The pairing file is unreadable. The old file was kept aside. Reset pairing to start again, then scan a new code on every iPhone."
             }
             Self::KeychainUnavailable => {
-                "The Keychain item with this Mac's pairing key could not be read. Unlock your Mac and open this page again, or reset pairing."
+                "The Keychain item with this Mac's pairing key is unreadable. Unlock your Mac and open this page again, or reset pairing."
             }
             Self::KeyMismatch => {
                 "The pairing file and the Keychain item do not belong together. Reset pairing to start again, then scan a new code on every iPhone."
@@ -78,8 +76,6 @@ pub struct Identity {
     pub listen_port: Option<u16>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub device_label: Option<String>,
-    #[serde(default, skip_serializing, rename = "allow_list")]
-    legacy_allow_list: Vec<String>,
     #[serde(skip)]
     last_recover: Option<std::time::Instant>,
     #[serde(skip)]
@@ -178,7 +174,7 @@ fn set_aside(path: &Path) {
         .unwrap_or_else(|| IDENTITY_FILE.to_string());
     let target = path.with_file_name(format!("{name}.unreadable-{stamp}"));
     if let Err(error) = std::fs::rename(path, &target) {
-        log::warn!("[bridge] could not set the unreadable pairing file aside: {error}");
+        log::warn!("[bridge] setting the unreadable pairing file aside failed: {error}");
     }
 }
 
@@ -204,7 +200,7 @@ impl Identity {
                 Self::without_file(path, vault)
             }
             Err(error) => {
-                log::warn!("[bridge] pairing file could not be opened: {error}");
+                log::warn!("[bridge] opening the pairing file failed: {error}");
                 Self::faulted(path, IdentityFault::FileUnreadable)
             }
         }
@@ -218,7 +214,6 @@ impl Identity {
             interfaces: None,
             listen_port: None,
             device_label: None,
-            legacy_allow_list: Vec::new(),
             last_recover: None,
             fault: Some(fault),
             prior_phone_count: 0,
@@ -253,7 +248,7 @@ impl Identity {
         match id.persist() {
             Ok(()) => id,
             Err(error) => {
-                log::warn!("[bridge] pairing file could not be written: {error}");
+                log::warn!("[bridge] writing the pairing file failed: {error}");
                 Self::faulted(path, IdentityFault::FileUnreadable)
             }
         }
@@ -272,10 +267,9 @@ impl Identity {
 
     fn settle(mut self, path: &Path, vault: &dyn KeyVault) -> Self {
         self.store = path.to_path_buf();
-        let is_adopted = self.adopt_legacy_allow_list();
         let prior = self.phones.len();
         if self.static_priv_b64.is_empty() {
-            return self.with_vault_key(vault, is_adopted);
+            return self.with_vault_key(vault);
         }
         if !self.migrate_key(vault) {
             return Self::faulted_after(path, IdentityFault::KeychainUnavailable, prior);
@@ -286,7 +280,7 @@ impl Identity {
         }
     }
 
-    fn with_vault_key(mut self, vault: &dyn KeyVault, is_dirty: bool) -> Self {
+    fn with_vault_key(mut self, vault: &dyn KeyVault) -> Self {
         let path = self.store.clone();
         let prior = self.phones.len();
         let Ok(held) = read_vault(vault) else {
@@ -302,10 +296,7 @@ impl Identity {
             return Self::faulted_after(&path, IdentityFault::KeyMismatch, prior);
         }
         self.static_priv_b64 = private;
-        match is_dirty && self.persist().is_err() {
-            true => Self::faulted_after(&path, IdentityFault::FileUnreadable, prior),
-            false => self,
-        }
+        self
     }
 
     fn migrate_key(&self, vault: &dyn KeyVault) -> bool {
@@ -376,26 +367,6 @@ impl Identity {
         let mut next = self.clone();
         next.listen_port = Some(port);
         self.commit(next)
-    }
-
-    fn adopt_legacy_allow_list(&mut self) -> bool {
-        if self.legacy_allow_list.is_empty() {
-            return false;
-        }
-        let now = crate::util::iso_now_whole_seconds();
-        for key in std::mem::take(&mut self.legacy_allow_list) {
-            if self.phones.iter().all(|p| p.key != key) {
-                self.phones.push(PairedPhone {
-                    key,
-                    name: DEFAULT_PHONE_NAME.to_string(),
-                    paired_at: now.clone(),
-                    last_seen: None,
-                    permissions: Permissions::default(),
-                    rules: Vec::new(),
-                });
-            }
-        }
-        true
     }
 
     pub fn static_priv(&self) -> Result<Vec<u8>, BridgeError> {
@@ -823,38 +794,6 @@ mod tests {
         id.enroll(&PHONE_A, "Harborline iPhone").unwrap();
 
         assert_eq!(id.permissions_of(&PHONE_A), Some(Permissions::default()));
-    }
-
-    #[test]
-    fn a_v1_allow_list_is_adopted_as_phones_with_default_permissions() {
-        let scratch = Scratch::new("legacy");
-        let file = scratch.file();
-        let fresh = Identity::load_or_create_at(&file).unwrap();
-        let legacy = serde_json::json!({
-            "static_priv_b64": fresh.static_priv_b64,
-            "static_pub_b64": fresh.static_pub_b64,
-            "allow_list": [b64().encode(PHONE_A), b64().encode(PHONE_B)],
-        });
-        std::fs::write(&file, serde_json::to_vec(&legacy).unwrap()).unwrap();
-
-        let id = Identity::load_or_create_at(&file).unwrap();
-
-        assert!(id.is_enrolled(&PHONE_A));
-        assert!(id.is_enrolled(&PHONE_B));
-        assert_eq!(id.permissions_of(&PHONE_A), Some(Permissions::default()));
-        let raw: serde_json::Value =
-            serde_json::from_slice(&std::fs::read(&file).unwrap()).unwrap();
-        assert!(raw.get("allow_list").is_none());
-        assert_eq!(raw["phones"].as_array().unwrap().len(), 2);
-    }
-
-    #[test]
-    fn the_legacy_allow_list_sunset_matches_the_versioning_doc() {
-        let doc = include_str!("../../../../../docs/versioning.md");
-        assert!(doc
-            .lines()
-            .any(|line| line.contains("companion.json")
-                && line.contains(LEGACY_ALLOW_LIST_READ_UNTIL)));
     }
 
     #[test]

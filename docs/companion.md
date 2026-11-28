@@ -39,9 +39,7 @@ phone with those rights like a second keyboard, not like a viewer.
   Keychain refuses the write, nothing is moved and nothing is created: the page
   shows the fault below and the move is tried again about every 20 seconds. The
   key is never kept in a file as a fallback.
-  A file written by an older version holds a bare list of keys: each becomes a
-  record with the default rights and is written back in the new shape. That
-  list is read until 0.45.0 (excluded).
+  A file written before 0.43.0 holds a bare list of keys that is no longer read: each iPhone pairs again.
 - **Pair an iPhone** on **Settings › This Mac › iPhone** mints a one-time 256-bit token that expires after 60
   seconds and shows it with the desktop's key and addresses as a QR code. The
   payload has `v: 2`, the device name, the key, the token, the endpoints, the

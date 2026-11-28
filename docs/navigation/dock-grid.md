@@ -142,8 +142,8 @@ remembers the layout of its grid (columns, each tool column's width, the height 
 two stacked panels in an optional `splits` field, the tab choice, the focus) in
 `session_dock_grids` (m244), one row per session, deleted with it. The Board, Home
 and the draft keep the window's grid and save nothing. The row is version 2 since
-Scripts and Ask joined; a version 1 row still reads until 0.45.0 (excluded), and a build that knows only
-version 1 shows the default layout.
+Scripts and Ask joined; a version 1 row is no longer read and its session opens with the default layout, and a
+build that knows only version 1 shows the default layout.
 
 - `useSessionDockGrid` (started by `useWindowLayout`) runs `watchSessionDockGrid`,
   keyed on `currentSessionId`.

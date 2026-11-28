@@ -14,11 +14,14 @@ type Params = {
 };
 
 export const storedStudioOf = ({ studio }: Params): StoredStudio | null => {
+  if (studio?.kind === 'calendar') {
+    return null;
+  }
   if (studio?.kind !== 'connections') {
     return studio;
   }
   const focus = studio.focus ?? null;
-  if (focus === null) {
+  if (focus === null || focus.kind === 'calendar') {
     return { kind: 'settings', focus: { scope: 'tools' } };
   }
   if (focus.kind === 'tool') {

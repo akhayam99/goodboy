@@ -3,9 +3,11 @@ import type { ColumnActions } from '../../components/ShellLeft/columnDoors';
 import { openDestination } from '../../../shared/navigation/openDestination';
 import { openHome } from '../../../shared/navigation/openHome';
 
-type Params = Omit<ColumnActions, 'openConnections' | 'openHome'>;
+type Params = Omit<ColumnActions, 'openConnections' | 'openCalendar' | 'openHome'>;
 
 const openConnections = (): void => openDestination({ id: 'connections' });
+
+const openCalendar = (): void => openDestination({ id: 'calendar' });
 
 export const useColumnActions = ({
   openBoard,
@@ -27,6 +29,7 @@ export const useColumnActions = ({
       openChat,
       openWorkflows,
       openNewChat,
+      openCalendar,
       openConnections,
       openMonitoring,
       openImpact,

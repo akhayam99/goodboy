@@ -265,6 +265,23 @@ export const COLUMN_DOOR_ROWS: ReadonlyArray<Row> = [
     ),
   },
   {
+    name: 'column: calendar',
+    covers: ['openCalendar', 'studio:calendar'],
+    door: 'visible',
+    open: () => click(doorIn('calendar')),
+    lands: both(
+      () => studio('Calendar'),
+      () => heading('Calendar'),
+      async () => expect(doorIn('calendar').getAttribute('aria-current')).toBe('page'),
+    ),
+  },
+  {
+    name: 'palette: Go to Calendar',
+    covers: ['palette:Calendar'],
+    open: () => openPalette(/^Calendar/, 'Calendar'),
+    lands: () => studio('Calendar'),
+  },
+  {
     name: 'palette: Go to Connections answers to Providers',
     covers: ['palette:Connections'],
     open: () => openPalette(/^Connections/, 'Providers'),

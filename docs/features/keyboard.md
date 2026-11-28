@@ -157,7 +157,7 @@ On a Mac the menu bar carries the same keys.
 - File: New Session, New Chat, New Terminal, New Workspace, Close (**⌘W**) and Close the panel (**⌘⇧W**).
 - Edit: Search.
 - View: Show or Hide Sessions (**⌘B**), Search or Run, Reset Panel Layout, zoom, Reload (**⌘R**) and Reload Goodboy (**⌘⇧R**).
-- Go: Back and Forward, then Board, Tasks, Workflows, Chat, Connections, Impact, Monitoring and Notifications. After a separator, Show or Hide Terminal and Show or Hide Browser.
+- Go: Back and Forward, then Board, Tasks, Workflows, Chat, Calendar, Connections, Impact, Monitoring and Notifications. After a separator, Show or Hide Terminal and Show or Hide Browser.
 - Help: Guide, What's New, Keyboard Shortcuts and Report a Bug.
 
 <picture>

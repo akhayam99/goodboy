@@ -158,6 +158,8 @@ map does not name ([architecture/table-writers.md](architecture/table-writers.md
 | `browser_visits`              | rust   | `browser/visit_rows.rs`. Url, title and the last visit time, at most 200 per session ([browser.md](browser.md)). Rows go with the session, and with its tab rows on archive.                                                                                                                                                         |
 | `budget_alerts`               | rust   | `budget.rs`                                                                                                                                                                                                                                                                                                                          |
 | `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                                                                                                                                                                                                                                   |
+| `calendar_roles`              | ts     | How each calendar of a source shows: show, busy, focus or hide (m247, `queries/calendar-source.ts`). One row per source and calendar; a calendar with no row shows. Rows go with their source.                                                                                                                                       |
+| `calendar_sources`            | ts     | One row per connected calendar source (m247): the calendars on this Mac, at most one, or a calendar link. Holds a label and the link host only; the link itself stays in the Keychain.                                                                                                                                               |
 | `chat_message_attachments`    | ts     | Rows go in with their message through `insertChatMessage`. Rust reads them to build a turn's image root.                                                                                                                                                                                                                             |
 | `chat_messages`               | ts     |                                                                                                                                                                                                                                                                                                                                      |
 | `chat_session_links`          | ts     |                                                                                                                                                                                                                                                                                                                                      |
@@ -194,6 +196,7 @@ map does not name ([architecture/table-writers.md](architecture/table-writers.md
 | `provider_credentials`        | ts     |                                                                                                                                                                                                                                                                                                                                      |
 | `provider_limits`             | ts     |                                                                                                                                                                                                                                                                                                                                      |
 | `provider_runs`               | ts     |                                                                                                                                                                                                                                                                                                                                      |
+| `reminders`                   | ts     | Reminders of a workspace (m247, `queries/reminder.ts`): a time, or a trigger with the session, pull request or event it waits on. Done and its undo only write when the row is still in the state they expect. A workspace merge moves them to the target.                                                                           |
 | `resolve_attempts`            | ts     | Exception: a project move rewrites `worktree_path`.                                                                                                                                                                                                                                                                                  |
 | `resolve_batches`             | ts     |                                                                                                                                                                                                                                                                                                                                      |
 | `resolve_candidate_items`     | ts     |                                                                                                                                                                                                                                                                                                                                      |
@@ -268,3 +271,17 @@ same origin ([architecture/artifact-frames.md](architecture/artifact-frames.md))
 Text a stranger wrote reaches a prompt only through `untrustedBlock` and
 renders with a depth cap and linear patterns
 ([architecture/untrusted-text.md](architecture/untrusted-text.md)).
+
+### Calendar sources
+
+`src-tauri/src/calendar/` reads events and never writes one. Each source sits
+behind the `CalendarSource` trait: `eventkit` reads the calendars already on
+the Mac (its native calls live in `platform/event_kit.rs`, behind the
+`EventStore` trait so tests use a fake and never prompt), and `ics` reads a
+calendar link over https with the shared client and the same-origin redirect
+policy, then parses it in house (VTIMEZONE offsets, RRULE with COUNT, UNTIL
+and EXDATE, moved occurrences). The link lives in the Keychain under
+`goodboy.calendar.ics.<id>`; only `calendar_request_access` may show the macOS
+prompt. One link stays in memory for 15 minutes. A listing returns what every
+healthy source read plus one failure row per source that did not, deduped by
+uid and start. The call link allowlist has one owner, `calendar/links.rs`.

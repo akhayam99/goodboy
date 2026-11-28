@@ -452,7 +452,8 @@ rule with the exception in Status & signals.
 ### Doors and tools
 
 A place you go to and read full width is a place on the left rail, an icon with
-one word under it (Board, Tasks, Workflows, Chat, Connect, Impact), under New.
+one word under it (Board, Tasks, Workflows, Chat, Calendar, Connect, Impact),
+under New.
 A tool you open beside your work is an icon on the tools rail and opens the
 dock, with Open full page (Terminal, Browser, Monitor). Scripts and Ask also
 open panels from the rail. Chat and Impact are places. Monitoring is a tool you

@@ -102,7 +102,7 @@ its foot ([shell.md](shell.md#the-rail-foot)).
    inside the window); ⌘1 to ⌘9 switch without it.
 2. **New** (⌘N, an outlined tile; a dot and `New session, draft in progress` while a
    draft waits).
-3. **Board** (⌘⇧H), Tasks, Workflows, Chat, Connect and Impact, Impact quiet and last.
+3. **Board** (⌘⇧H), Tasks, Workflows, Chat, Calendar, Connect and Impact, Impact quiet and last.
 4. At the foot Settings (⌘,), the bug and the Goodboy signature.
 
 Each item is an 18px icon with one word under it. Connections reads Connect, its

@@ -48,6 +48,7 @@ export type PullRequestFacts = {
   readonly commitCount: number | null;
   readonly isRebaseStopOpen: boolean;
   readonly unpushed: number;
+  readonly isRemindedWhenGreen?: boolean;
 };
 
 type FixSignals = {

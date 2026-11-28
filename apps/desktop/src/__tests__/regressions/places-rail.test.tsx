@@ -30,6 +30,7 @@ const RAIL_ORDER = [
   'inbox',
   'workflows',
   'chat',
+  'calendar',
   'connections',
   'impact',
   'settings',

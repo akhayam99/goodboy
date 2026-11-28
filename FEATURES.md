@@ -227,7 +227,7 @@ Keep tokens out of what you save, move your setup between machines, and update w
 
 Find any session, message, plan or action, and reach it from the keyboard. The places rail keeps workspace navigation on the left, and **⌘K** and **⌘F** cover the rest.
 
-- **Places rail**: Move between Board, Tasks, Workflows, Chat, Connect and Impact from the places rail on the left.
+- **Places rail**: Move between Board, Tasks, Workflows, Chat, Calendar, Connect and Impact from the places rail on the left.
 - **Go anywhere**: Reach any screen without the mouse.
 - **Search or run**: Press ⌘K, or click Search or run in the top bar, to act on what you are looking at.
 - **Search**: Find a message, a plan, a decision, an issue or a branch with ⌘F.
@@ -246,6 +246,19 @@ Drive Goodboy from the keyboard, run a shell in the session's worktree, and open
 - **Browser**: Open your dev server, a port or a link beside the session or on a page of its own, without leaving Goodboy.
 
 [More on keyboard and terminal](docs/features/keyboard.md)
+
+<a id="your-day-and-your-week"></a><a id="before-a-call"></a><a id="the-call-chip"></a><a id="reminders"></a>
+
+## Calendar and reminders
+
+See your meetings next to your agents. Goodboy only reads your calendar, and never changes an event.
+
+- **Your day and your week**: Calendar in the places rail shows today's meetings as one list, with the start, the length and when each one begins.
+- **Before a call**: Click a meeting to open its panel beside the page, with the time, where it comes from and the host of its call link.
+- **The call chip**: A small window opens at the top of your screen, over every app, five minutes before a meeting with a call link.
+- **Reminders**: Write a reminder under the day and press Enter.
+
+[More on calendar](docs/features/calendar.md)
 
 <a id="report-a-bug"></a>
 

@@ -25,6 +25,7 @@ export type StudioPlace =
   | { readonly kind: 'connections'; readonly focus?: ConnectionsFocus | null }
   | { readonly kind: 'monitoring'; readonly target?: MonitoringTarget | null }
   | { readonly kind: 'chat'; readonly chatId: ChatId | null }
+  | { readonly kind: 'calendar' }
   | {
       readonly kind: 'browser';
       readonly sessionId: SessionId | null;
@@ -75,11 +76,13 @@ export const studioKey = ({ studio }: KeyParams): string => {
       return joined([
         'connections',
         studio.focus?.kind,
-        studio.focus?.kind === 'tool' ? studio.focus.tool : studio.focus?.provider,
+        studio.focus?.kind === 'tool' ? studio.focus.tool : undefined,
+        studio.focus?.kind === 'provider' ? studio.focus.provider : undefined,
       ]);
     case 'guide':
     case 'changelog':
     case 'notifications':
+    case 'calendar':
       return studio.kind;
     default: {
       const unreachable: never = studio;

@@ -12,7 +12,7 @@ true turns it into **holds** and adds its guard. A unit that changes the skeleto
 edits this section first.
 
 1. **Left is where you go. Holds.** The places rail
-   ([surfaces.md](surfaces.md#the-places-rail)) holds New and the six places and
+   ([surfaces.md](surfaces.md#the-places-rail)) holds New and the seven places and
    no tool. An open session keeps the Board lit, since it is the Board's child. Sessions in
    the top bar moves between sessions without the Board
    (`ShellLeft/index.test.tsx`, `regressions/places-rail.test.tsx`).
@@ -347,6 +347,21 @@ A new item adds a row and an id, never an event or a listener.
 One sheet files every bug, floating at the bottom of the window with no overlay;
 its doors, the crash and freeze records and first-run setup are in
 [setup-and-crash.md](setup-and-crash.md).
+
+## The call chip window
+
+The only window that is not a workspace window. What it says is in
+[calendar.md](../features/calendar.md#the-call-chip).
+
+- Label `call-chip`, made by Rust (`calendar/alerts_window.rs`) only when a call
+  alert fires and the chip is on, destroyed on Hide: always on top, on every
+  Space, no decorations, no taskbar entry, never focused on open, 384 wide, top
+  centre of the screen under the pointer. It stays hidden until its first resize.
+- `main.tsx` renders only `CallChipWindow` for that label: no store, no database,
+  no shell. It reads its view from `calendar_chip_view` and `calendar-chip-view`,
+  and every click goes back to the main window as `calendar-chip-action`.
+- `capabilities/call-chip.json` grants it only event listening; the main window
+  owns every state change.
 
 ## Auto in the shell
 

@@ -38,6 +38,7 @@ export type ColumnActions = {
   readonly openChat: () => void;
   readonly openWorkflows: () => void;
   readonly openNewChat: () => void;
+  readonly openCalendar: () => void;
   readonly openConnections: () => void;
   readonly openMonitoring: () => void;
   readonly openImpact: () => void;
@@ -67,6 +68,9 @@ export const openColumnDoor = ({ id, actions }: OpenDoorParams): void => {
       return;
     case 'workflows':
       actions.openWorkflows();
+      return;
+    case 'calendar':
+      actions.openCalendar();
       return;
     case 'connections':
       actions.openConnections();

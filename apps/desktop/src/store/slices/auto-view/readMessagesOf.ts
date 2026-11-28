@@ -47,7 +47,7 @@ export const readMessagesOf = ({
     ) {
       return [];
     }
-    const text = noteTextOf({ payload: row.payload, text: row.payload.text });
+    const text = noteTextOf({ payload: row.payload });
     if (text === null) {
       return [];
     }

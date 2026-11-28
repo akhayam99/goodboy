@@ -183,6 +183,7 @@ const STUDIO_ROOTS: Readonly<Record<StudioKind, ReadonlyArray<string>>> = {
   chat: ['features/workspace-chat/components/ChatRoom/index.tsx'],
   connections: ['features/connections/components/ConnectionsIndex/index.tsx'],
   monitoring: ['features/monitoring/components/MonitoringStudio/MonitoringPage.tsx'],
+  calendar: ['features/calendar/components/CalendarPage/index.tsx'],
 };
 
 const FORM_AND_DETAIL_ROOTS: PlaceRoots = {

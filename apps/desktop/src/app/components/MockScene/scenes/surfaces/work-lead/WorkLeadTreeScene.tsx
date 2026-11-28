@@ -48,18 +48,18 @@ const STORED_MESSAGES: ReadonlyArray<StoredMessage> = [
   {
     id: 'm5',
     text: 'Denied Bash. Keep the ledger export as it is',
-    payload: {},
+    payload: { origin: 'permission', userText: 'Keep the ledger export as it is' },
   },
   {
     id: 'm6',
     text: 'Permission for that exact command is granted for this one call. Continue where you stopped.',
-    payload: {},
+    payload: { origin: 'permission' },
   },
 ];
 
 const NOTES: ReadonlyArray<LeadTreeItem> = STORED_MESSAGES.flatMap(
   (message): ReadonlyArray<LeadTreeItem> => {
-    const text = noteTextOf({ payload: message.payload, text: message.text });
+    const text = noteTextOf({ payload: message.payload });
     return text === null
       ? []
       : [

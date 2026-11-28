@@ -52,6 +52,7 @@ const sendNote = async ({ world }: NoteParams): Promise<void> => {
     id: NOTE_ID,
     text: NOTE,
     atMs: world.state.world.clock.now() + 5,
+    isNote: true,
   });
   await world.runtime.drive(world.treeId);
   await world.runtime.settled();

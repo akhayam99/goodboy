@@ -8,6 +8,8 @@ import {
   type ErrorReportRequest,
 } from '@goodboy/ui';
 import { App } from './App';
+import { CallChipWindow } from './features/calendar/chip/CallChipWindow';
+import { isCallChipWindow } from './features/calendar/chip/isCallChipWindow';
 import { installBackends } from './app/installBackends';
 import { ScrollerStyleProvider } from './shared/components/ScrollerStyleProvider';
 import { NAMES } from './shared/utils/names';
@@ -61,6 +63,15 @@ if (!container) {
   throw new Error('root element not found');
 }
 
+const appRoot =
+  MockEntry !== null ? (
+    <Suspense fallback={null}>
+      <MockEntry />
+    </Suspense>
+  ) : (
+    <App />
+  );
+
 createRoot(container).render(
   <StrictMode>
     <ErrorBoundary
@@ -75,13 +86,7 @@ createRoot(container).render(
       >
         <CodeHighlighterContext.Provider value={APP_CODE_HIGHLIGHTER}>
           <ScrollerStyleProvider>
-            {MockEntry !== null ? (
-              <Suspense fallback={null}>
-                <MockEntry />
-              </Suspense>
-            ) : (
-              <App />
-            )}
+            {isCallChipWindow() ? <CallChipWindow /> : appRoot}
           </ScrollerStyleProvider>
         </CodeHighlighterContext.Provider>
       </RemoteImageLoaderProvider>

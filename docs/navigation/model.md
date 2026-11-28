@@ -57,7 +57,7 @@
 ### One list names every destination
 
 `DESTINATIONS` (`shared/navigation/destinations.ts`) owns, for Home, Board, Tasks,
-Workflows, Chat, Connections, Impact, Monitoring, Notifications, Terminal, Browser,
+Workflows, Chat, Calendar, Connections, Impact, Monitoring, Notifications, Terminal, Browser,
 Settings, Guide and What's new, in one order: the name, the glyph, the shortcut, the
 menu id, the former names, the scope (`app` or `workspace`), the home (`column`,
 `rail`, `menu`, `topBar` or `foot`) and the short rail word (`railWord`, Connect).
@@ -120,7 +120,7 @@ B gets no second copy.
   session or Board they were opened in
   ([surfaces.md](surfaces.md#the-dock-follows-the-page)).
 - **A door replaces, a link stacks.** A door names a studio: a column door (Tasks,
-  Chat, Connections, Workflows, Impact, Monitoring, Settings), the Goodboy line, the
+  Chat, Calendar, Connections, Workflows, Impact, Monitoring, Settings), the Goodboy line, the
   foot of the bell list, a ⌘K Go to row, the spend chip. A door over an open studio
   replaces it in the same entry (`switchStudio`), so five doors leave one entry. A
   link inside a studio's content (a notification opening Settings, a card opening
@@ -131,7 +131,7 @@ B gets no second copy.
   below, and Forward brings it back. With nothing below, Close rewrites the top entry
   as the page without the studio. Esc closes a popover or confirmation inside first.
   An app page (Settings, Help, New workspace) shows Back to app; a workspace page
-  (Tasks, Workflows, Chat, Connections, Impact, Terminal, Browser, Monitoring,
+  (Tasks, Workflows, Chat, Calendar, Connections, Impact, Terminal, Browser, Monitoring,
   Notifications) shows no exit control. Nothing has a Close button.
 
 ### One selected sign
