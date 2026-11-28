@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import type { CalendarEvent, CalendarList } from '@goodboy/types';
 import { CHECK_STATE } from '../notifications/errorRecovery';
 import type { SliceDeps } from '../../slice-types';
@@ -25,11 +26,13 @@ export const loadCalendarEvents = ({ set, get }: SliceDeps) => {
           events: eventsWithRoles({ events: listed.items, roles: state.calendarRoles }),
           failedSources: listed.failedSources,
         },
+        calendarEventsError: null,
       }));
     } catch (error) {
       if (!claimed.isCurrent()) {
         return;
       }
+      set({ calendarEventsError: formatError(error) });
       await get().reportError({
         recovery: CHECK_STATE,
         title: "Couldn't load your meetings",

@@ -18,6 +18,8 @@ export type CalendarState = {
   readonly calendarSources: ReadonlyArray<CalendarSource>;
   readonly calendarRoles: ReadonlyArray<CalendarRoleEntry>;
   readonly calendarDay: CalendarDay | null;
+  readonly calendarSourcesError: string | null;
+  readonly calendarEventsError: string | null;
   readonly calendarReminders: Readonly<Record<WorkspaceId, ReadonlyArray<Reminder>>>;
 };
 
@@ -25,5 +27,7 @@ export const calendarInitialState: CalendarState = {
   calendarSources: [],
   calendarRoles: [],
   calendarDay: null,
+  calendarSourcesError: null,
+  calendarEventsError: null,
   calendarReminders: {},
 };
