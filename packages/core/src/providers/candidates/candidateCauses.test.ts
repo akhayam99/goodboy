@@ -21,26 +21,32 @@ describe('CANDIDATE_CAUSES', () => {
   it('says every cause in a short plain line', () => {
     for (const { text } of Object.values(CANDIDATE_CAUSES)) {
       expect(text.length).toBeGreaterThan(0);
-      expect(text.length).toBeLessThanOrEqual(110);
+      expect(text.length).toBeLessThanOrEqual(60);
     }
   });
 
   it('names the provider in the two reasons that blame it', () => {
     expect(candidateCauseTextOf({ cause: 'writer', providerName: 'Cursor' })).toBe(
-      'the Lead cannot stop Cursor from pushing on its own yet, so it gives Cursor only read-only jobs',
+      "read-only jobs only: cannot block Cursor's pushes yet",
     );
     expect(candidateCauseTextOf({ cause: 'not-for-helpers', providerName: 'OpenCode' })).toBe(
-      'the Lead cannot keep OpenCode read-only yet, so it does not use it',
+      'not used: cannot keep OpenCode read-only yet',
     );
   });
 
   it('falls back to the plain sentence without a provider name', () => {
     expect(candidateCauseTextOf({ cause: 'writer', providerName: null })).toBe(
-      'the Lead gives this provider only read-only jobs, since it cannot stop it from pushing on its own yet',
+      'read-only jobs only: cannot block its pushes yet',
     );
     expect(candidateCauseTextOf({ cause: 'cooldown', providerName: 'Claude' })).toBe(
       CANDIDATE_CAUSES.cooldown.text,
     );
+  });
+
+  it('falls back to the plain sentence when the name makes it too long', () => {
+    expect(
+      candidateCauseTextOf({ cause: 'writer', providerName: 'A very long provider label' }),
+    ).toBe(CANDIDATE_CAUSES.writer.text);
   });
 
   it('says the provider rank with the provider name', () => {

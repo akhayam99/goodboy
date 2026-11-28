@@ -96,10 +96,7 @@ describe('routingWhyOf', () => {
         'Cursor is #2 in your order · about 40% used, estimated · 1 agent in the last hour',
       ],
       ['Codex', 'Codex is #3 in your order · no usage reading · 0 agents in the last hour'],
-      [
-        'Cursor',
-        'the Lead cannot stop Cursor from pushing on its own yet, so it gives Cursor only read-only jobs',
-      ],
+      ['Cursor', "read-only jobs only: cannot block Cursor's pushes yet"],
     ]);
     expect(rows.map((candidate) => candidate.isPick)).toEqual([false, false, true, false]);
     expect(rows.map((candidate) => candidate.isStruck)).toEqual([false, false, false, true]);
@@ -138,7 +135,7 @@ describe('routingWhyOf', () => {
         cause: 'writer',
         proposal: 'replaced',
         reason:
-          'The Lead asked for Cursor Sonnet 5.5: the Lead cannot stop Cursor from pushing on its own yet, so it gives Cursor only read-only jobs. Claude: first in your order.',
+          "The Lead asked for Cursor Sonnet 5.5: read-only jobs only: cannot block Cursor's pushes yet. Claude: first in your order.",
         requested: { provider: 'cursor', model: 'sonnet-5.5', effort: 'medium' },
         modelReason: 'Cursor has room and Sonnet fits a standard test.',
       }),
@@ -146,7 +143,7 @@ describe('routingWhyOf', () => {
 
     expect(why).toMatchObject({
       whyLabel: 'Why Claude: ',
-      why: 'The Lead asked for Cursor Sonnet 5.5: the Lead cannot stop Cursor from pushing on its own yet, so it gives Cursor only read-only jobs. Claude: first in your order.',
+      why: "The Lead asked for Cursor Sonnet 5.5: read-only jobs only: cannot block Cursor's pushes yet. Claude: first in your order.",
       leadSaid: 'Cursor has room and Sonnet fits a standard test.',
       isMoved: true,
     });
@@ -154,8 +151,7 @@ describe('routingWhyOf', () => {
     expect(asked).toMatchObject({
       providerLabel: 'Cursor',
       isStruck: true,
-      facts:
-        'asked by the Lead · the Lead cannot stop Cursor from pushing on its own yet, so it gives Cursor only read-only jobs',
+      facts: "asked by the Lead · read-only jobs only: cannot block Cursor's pushes yet",
     });
     expect(why?.candidates.filter((candidate) => candidate.isPick)).toHaveLength(1);
   });
@@ -184,7 +180,7 @@ describe('routingWhyOf', () => {
         cause: 'writer',
         proposal: 'replaced',
         reason:
-          'The Lead asked for Claude Sonnet 5.5: the Lead cannot stop Claude from pushing on its own yet, so it gives Claude only read-only jobs.',
+          "The Lead asked for Claude Sonnet 5.5: read-only jobs only: cannot block Claude's pushes yet.",
         requested: { provider: 'anthropic', model: 'claude-sonnet-5-5', effort: 'medium' },
         candidates: [
           row({ provider: 'anthropic', model: 'sonnet-5.5', cause: 'writer' }),

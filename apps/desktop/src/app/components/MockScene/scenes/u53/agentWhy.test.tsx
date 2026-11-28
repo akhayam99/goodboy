@@ -79,9 +79,7 @@ describe('an agent names its provider, model and why', () => {
     );
     const struck = rows.filter((row) => row.hasAttribute('data-candidate-struck'));
     expect(struck.map((row) => row.textContent)).toEqual([
-      expect.stringContaining(
-        'the Lead cannot stop Cursor from pushing on its own yet, so it gives Cursor only read-only jobs',
-      ),
+      expect.stringContaining("read-only jobs only: cannot block Cursor's pushes yet"),
     ]);
   });
 
@@ -91,14 +89,14 @@ describe('an agent names its provider, model and why', () => {
     within(brief).getByText('Claude');
     within(brief).getByText('Why Claude:', { exact: false });
     within(brief).getByText(
-      /The Lead asked for Cursor Sonnet 5.5: the Lead cannot stop Cursor from pushing/,
+      /The Lead asked for Cursor Sonnet 5.5: read-only jobs only: cannot block Cursor/,
     );
     within(brief).getByText('The Lead said: "Cursor has room and Sonnet fits a standard test."');
     expect(within(brief).queryByText(/used Sonnet 5.5/)).toBeNull();
 
     fireEvent.click(within(brief).getByRole('button', { name: 'Candidates it weighed' }));
     within(brief).getByText(
-      /asked by the Lead · the Lead cannot stop Cursor from pushing on its own yet, so it gives Cursor only read-only jobs/,
+      /asked by the Lead · read-only jobs only: cannot block Cursor's pushes yet/,
     );
   });
 

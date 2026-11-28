@@ -43,11 +43,11 @@ export const CANDIDATE_CAUSES = {
     adjustment: 'disconnected',
   },
   'not-for-helpers': {
-    text: 'the Lead cannot keep this provider read-only yet, so it does not use it',
+    text: 'not used: cannot keep it read-only yet',
     adjustment: 'disconnected',
   },
   writer: {
-    text: 'the Lead gives this provider only read-only jobs, since it cannot stop it from pushing on its own yet',
+    text: 'read-only jobs only: cannot block its pushes yet',
     adjustment: 'disconnected',
   },
   'no-model': { text: 'no model here fits this step', adjustment: 'unknown_model' },
@@ -60,6 +60,8 @@ export const CANDIDATE_CAUSES = {
   'not-listed': { text: 'not a candidate for this step', adjustment: 'unknown_model' },
 } as const satisfies Readonly<Record<CandidateCause, CauseCopy>>;
 
+const MAX_CAUSE_LENGTH = 60;
+
 type NamedCauseParams = {
   readonly name: string;
 };
@@ -67,10 +69,8 @@ type NamedCauseParams = {
 const NAMED_CAUSE_TEXT: Readonly<
   Partial<Record<CandidateCause, (params: NamedCauseParams) => string>>
 > = {
-  'not-for-helpers': ({ name }) =>
-    `the Lead cannot keep ${name} read-only yet, so it does not use it`,
-  writer: ({ name }) =>
-    `the Lead cannot stop ${name} from pushing on its own yet, so it gives ${name} only read-only jobs`,
+  'not-for-helpers': ({ name }) => `not used: cannot keep ${name} read-only yet`,
+  writer: ({ name }) => `read-only jobs only: cannot block ${name}'s pushes yet`,
 };
 
 type CauseTextParams = {
@@ -83,7 +83,8 @@ export const candidateCauseTextOf = ({ cause, providerName }: CauseTextParams): 
   if (named === undefined || providerName === null) {
     return CANDIDATE_CAUSES[cause].text;
   }
-  return named({ name: providerName });
+  const text = named({ name: providerName });
+  return text.length > MAX_CAUSE_LENGTH ? CANDIDATE_CAUSES[cause].text : text;
 };
 
 type OrderFactParams = {
