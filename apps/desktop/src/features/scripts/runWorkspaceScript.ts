@@ -17,7 +17,7 @@ export const runWorkspaceScript = ({ workspaceId, rootPath, script }: Params): v
   state.setTerminalPrefill({
     owner,
     tabId,
-    prefill: scriptCommandOf({ script: { invocation: script.invocation, relDir: script.relDir } }),
+    prefill: scriptCommandOf({ script: { invocation: script.runBody, relDir: script.relDir } }),
   });
   state.openDrawer({ kind: 'terminal', sessionId: null, payload: { terminalId: tabId } });
 };

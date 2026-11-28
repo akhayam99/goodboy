@@ -1,4 +1,10 @@
-import { brandId, type ProjectId } from '@goodboy/types';
+import {
+  brandId,
+  type IsoDateTime,
+  type ProjectId,
+  type ProjectScript,
+  type ProjectScriptId,
+} from '@goodboy/types';
 import { aProject } from '@goodboy/types/testing';
 import { describe, expect, it } from 'vitest';
 import { scriptPinId } from './scriptPinId';
@@ -84,5 +90,29 @@ describe('the scripts of every project of the workspace', () => {
     });
 
     expect(groups.map((group) => group.projectName)).toEqual(['payments-api']);
+  });
+
+  it('keeps the whole body of a saved script to run, beside its one line preview', () => {
+    const saved: ProjectScript = {
+      id: brandId<ProjectScriptId>({ value: 'script-prepare-and-test' }),
+      projectId: LEDGER,
+      name: 'Prepare and test',
+      body: 'echo preparing\npnpm run test',
+      sortOrder: 0,
+      createdAt: brandId<IsoDateTime>({ value: '2026-11-01T00:00:00.000Z' }),
+      updatedAt: brandId<IsoDateTime>({ value: '2026-11-01T00:00:00.000Z' }),
+    };
+
+    const [group] = workspaceScriptsOf({
+      projects: PROJECTS,
+      scans: {},
+      saved: [saved],
+      pins: {},
+      projectId: LEDGER,
+    });
+
+    expect(group?.scripts.map((script) => [script.invocation, script.runBody])).toEqual([
+      ['echo preparing', 'echo preparing\npnpm run test'],
+    ]);
   });
 });

@@ -9,6 +9,7 @@ export type WorkspaceScript = {
   readonly name: string;
   readonly body: string;
   readonly invocation: string;
+  readonly runBody: string;
   readonly relDir: string;
   readonly isPinned: boolean;
 };
@@ -65,6 +66,7 @@ const groupOf = ({ project, scans, saved, pins }: ProjectParams): WorkspaceScrip
         name: script.name,
         body: preview,
         invocation: preview,
+        runBody: script.body,
         relDir: '',
         isPinned: pinned.includes(
           scriptPinId({ source: 'saved', relDir: '', name: '', savedId: script.id }),
@@ -91,6 +93,7 @@ const groupOf = ({ project, scans, saved, pins }: ProjectParams): WorkspaceScrip
     name: entry.script.name,
     body: entry.script.body,
     invocation: entry.script.command,
+    runBody: entry.script.command,
     relDir: entry.relDir,
     isPinned,
   });
