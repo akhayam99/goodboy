@@ -57,6 +57,7 @@ type State = {
   workspaceOverrides: Record<string, unknown>;
   phaseTemplates: Record<WorkspaceId, ReadonlyArray<Workflow>>;
   emitNotification: ReturnType<typeof vi.fn>;
+  loadWorkspaceValue: () => Promise<string | null>;
 };
 
 const buildHarness = (stateOverrides: Partial<State> = {}) => {
@@ -68,6 +69,7 @@ const buildHarness = (stateOverrides: Partial<State> = {}) => {
     workspaceOverrides: {},
     phaseTemplates: { [WORKSPACE_ID]: [workflow] },
     emitNotification: vi.fn(async () => undefined),
+    loadWorkspaceValue: vi.fn(async () => null),
     ...stateOverrides,
   };
   const set = vi.fn((updater: (s: State) => Partial<State>) => {
@@ -110,6 +112,23 @@ describe('generateWorkflowTitle', () => {
       expect.objectContaining({ id: WORKFLOW_ID, name: 'Ship the auth rework' }),
     );
     expect(state.phaseTemplates[WORKSPACE_ID]?.[0]?.name).toBe('Ship the auth rework');
+  });
+
+  it('asks for the title in the set language', async () => {
+    invokeMock.mockResolvedValue({
+      stdout: okStdout('<title>Rilascia il rifacimento auth</title>'),
+      stderr: '',
+      exitCode: 0,
+    });
+    invokeWorkflowUpsertSpy.mockResolvedValue({
+      ...workflow,
+      name: 'Rilascia il rifacimento auth',
+    });
+    const { generate } = buildHarness({ loadWorkspaceValue: vi.fn(async () => 'it') });
+
+    await generate(WORKSPACE_ID, WORKFLOW_ID, SESSION_ID, FALLBACK_NAME, 'ship the thing', '');
+
+    expect(JSON.stringify(invokeMock.mock.calls)).toContain('written in Italian');
   });
 
   it('leaves a visibly provisional name and stays silent on generation failure', async () => {

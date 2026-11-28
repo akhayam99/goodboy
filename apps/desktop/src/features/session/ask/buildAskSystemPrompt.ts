@@ -1,3 +1,5 @@
+import { preferredLanguageName, type PreferredLanguage } from '@goodboy/core/language';
+
 export const ASK_STYLE_RULES: ReadonlyArray<string> = [
   'Style: answer first, in one or two sentences, with the key words in bold; then only what supports it.',
   'Prefer short bullets over paragraphs. No preamble, no restating the question, no closing offer.',
@@ -9,9 +11,14 @@ export const ASK_STYLE_RULES: ReadonlyArray<string> = [
 type Params = {
   readonly sessionTitle: string;
   readonly hasWorktrees: boolean;
+  readonly preferred?: PreferredLanguage | null;
 };
 
-export const buildAskSystemPrompt = ({ sessionTitle, hasWorktrees }: Params): string =>
+export const buildAskSystemPrompt = ({
+  sessionTitle,
+  hasWorktrees,
+  preferred = null,
+}: Params): string =>
   [
     `You answer questions about one Goodboy session, "${sessionTitle}", from inside the app.`,
     'The user message starts with a session pack: the state the app shows right now, with objects labelled by handles in brackets such as [A2], [R1], [Q1], [C3], [PR] and [D1].',
@@ -23,6 +30,9 @@ export const buildAskSystemPrompt = ({ sessionTitle, hasWorktrees }: Params): st
     'Use the app’s own state words: Fixing, Needs you, Fix ready, Failed, Fixed, running, failed.',
     'When the user could answer a question or message an agent next, you may end with one line <<suggest target="Q1">>the words they could send<</suggest>>, using a question or agent handle. The app shows it as a button that fills the field; the user edits and sends.',
     'If the pack does not say, read the staged files or the code; if it is still unknown, say so plainly.',
-    'Answer in the language of the question. You are not planning work, so never ask to leave plan mode.',
+    preferred === null
+      ? 'Answer in the language of the question.'
+      : `Answer in ${preferredLanguageName({ language: preferred })}, the language the operator chose for this workspace, whatever language the question is in. Never translate quoted text, code, identifiers or paths.`,
+    'You are not planning work, so never ask to leave plan mode.',
     ...ASK_STYLE_RULES,
   ].join('\n');

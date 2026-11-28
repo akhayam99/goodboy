@@ -2,18 +2,25 @@ import { selectTaskModel } from '../../runtime/models/selectTaskModel';
 import { runHelperTask } from '../providerLimits/runHelperTask';
 import { devWarn } from '@goodboy/core/dev-log';
 import { formatError } from '@goodboy/ui';
+import type { PreferredLanguage } from '@goodboy/core/language';
 import type { SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { generateTitleText } from './generateTitleText';
-import { TITLE_REPLY_RULES } from '../turn/applyHeuristicTitle/titleReplyRules';
+import { titleReplyRulesOf } from '../turn/applyHeuristicTitle/titleReplyRules';
+import { loadPreferredLanguage } from '../settings/loadPreferredLanguage';
 import { invokeWorkflowUpsert } from '../../../features/workflows/workflows';
 import { clampWorkflowTitle } from './titleLimit';
 import type { GetFn, SetFn } from './types';
 import { sessionById } from '../sessions/sessionIndex';
 
-const WORKFLOW_TITLE_SYSTEM_PROMPT = [
-  'Write one short title for the orchestrated workflow described below.',
-  TITLE_REPLY_RULES,
-].join(' ');
+type SystemPromptParams = {
+  readonly preferred: PreferredLanguage | null;
+};
+
+const workflowTitleSystemPromptOf = ({ preferred }: SystemPromptParams): string =>
+  [
+    'Write one short title for the orchestrated workflow described below.',
+    titleReplyRulesOf({ preferred }),
+  ].join(' ');
 
 export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
   return async (
@@ -33,6 +40,7 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
       if (prompt.length === 0) {
         return;
       }
+      const preferred = await loadPreferredLanguage({ get, workspaceId });
       const taskModel = selectTaskModel({ state: get(), sessionId, task: 'agent_naming' });
       const worktreePath = get().sessionWorktrees?.[sessionId]?.[0] ?? null;
 
@@ -44,7 +52,8 @@ export const generateWorkflowTitle = (set: SetFn, get: GetFn) => {
         run: (model) =>
           generateTitleText({
             prompt,
-            systemPrompt: WORKFLOW_TITLE_SYSTEM_PROMPT,
+            systemPrompt: workflowTitleSystemPromptOf({ preferred }),
+            preferred,
             ...model,
             ...(worktreePath != null && { workingDir: worktreePath }),
           }),

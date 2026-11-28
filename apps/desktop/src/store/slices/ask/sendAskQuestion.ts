@@ -23,6 +23,7 @@ import { buildAskTurnPrompt } from '../../../features/session/ask/buildAskTurnPr
 import { collectAskPackInput } from '../../../features/session/ask/collectAskPackInput';
 import { stabilizeAskAnswer } from '../../../features/session/ask/parseAskAnswer';
 import type { ChatTurnOutcome } from '../../../features/conversation/chatTurnOutcome';
+import { loadPreferredLanguage } from '../settings/loadPreferredLanguage';
 import { chatTitleFromQuestion } from '../chats/chatTitleFromQuestion';
 import { sessionById } from '../sessions/sessionIndex';
 import { askRoutingOf } from './askRoutingOf';
@@ -210,6 +211,7 @@ export const sendAskQuestion =
       await settleAskRoutingWrite({ sessionId }).catch((error: unknown) => {
         throw new Error(`Could not save the model choice. ${formatError(error)}`);
       });
+      const preferred = await loadPreferredLanguage({ get, workspaceId: thread.workspaceId });
       outcome = await activeAskBackend.runTurn({
         request: {
           runId,
@@ -223,6 +225,7 @@ export const sendAskQuestion =
           systemPrompt: buildAskSystemPrompt({
             sessionTitle: input.title,
             hasWorktrees: mounts.length > 0,
+            preferred,
           }),
           dossier: pack.files,
         },

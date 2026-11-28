@@ -1,5 +1,6 @@
 import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { getDefaultBinary, runAuxOneShot } from '@goodboy/core/providers';
+import type { PreferredLanguage } from '@goodboy/core/language';
 import type { TaskModelPreference } from '@goodboy/types';
 import { parseGeneratedTitle } from '../turn/applyHeuristicTitle/parseGeneratedTitle';
 
@@ -9,12 +10,14 @@ type Params = TaskModelPreference &
   Readonly<{
     prompt: string;
     systemPrompt: string;
+    preferred: PreferredLanguage | null;
     workingDir?: string;
   }>;
 
 export const generateTitleText = async ({
   prompt,
   systemPrompt,
+  preferred,
   providerId,
   model,
   effort,
@@ -44,7 +47,12 @@ export const generateTitleText = async ({
     if ((result.exitCode ?? 0) !== 0) {
       throw new Error(result.stderr);
     }
-    const title = parseGeneratedTitle({ providerId, stdout: result.stdout, ask: prompt });
+    const title = parseGeneratedTitle({
+      providerId,
+      stdout: result.stdout,
+      ask: prompt,
+      preferred,
+    });
     if (title.trim() === '') {
       throw new Error('the model returned an empty title');
     }

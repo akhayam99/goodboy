@@ -4,6 +4,7 @@ import { VerbositySelect } from '../../../session/verbositySelect';
 import { useAppStore } from '../../../../store';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import {
+  PreferredLanguageField,
   useWorkspaceOverrideSave,
   WorkspaceFieldRow,
 } from '../../../settings/workspaceFieldSurfaces';
@@ -36,6 +37,7 @@ export const ReplyLengthBand = ({ workspaceId }: Props) => {
           disabled={false}
         />
       </WorkspaceFieldRow>
+      <PreferredLanguageField workspaceId={workspaceId} />
     </Band>
   );
 };

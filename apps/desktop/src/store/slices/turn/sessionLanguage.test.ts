@@ -280,4 +280,45 @@ describe('buildSessionLanguageGuard', () => {
     expect(buildSessionLanguageGuard({ anchor: { source: 'goal', text: '   ' } })).toBe('');
     expect(buildSessionLanguageGuard({ anchor: { source: 'message', text: '   ' } })).toBe('');
   });
+
+  it('keeps the detected behavior when no language is set', () => {
+    const guard = buildSessionLanguageGuard({
+      anchor: { source: 'goal', text: ITALIAN_GOAL },
+      preferred: null,
+    });
+
+    expect(guard).toContain('Write every reply, question, suggestion and summary in Italian.');
+    expect(guard).not.toContain('chose');
+  });
+
+  it('asks for Italian in replies, titles and summaries when Italian is set', () => {
+    const guard = buildSessionLanguageGuard({
+      anchor: { source: 'message', text: 'Please fix the ledger export so it finishes quickly' },
+      preferred: 'it',
+    });
+
+    expect(guard).toContain(
+      'Write every reply, question, suggestion, title and summary in Italian.',
+    );
+    expect(guard).toContain('wins over the language the message is written in');
+  });
+
+  it('never translates the operator words and leaves commits in the repository language', () => {
+    const guard = buildSessionLanguageGuard({
+      anchor: { source: 'goal', text: ITALIAN_GOAL },
+      preferred: 'en',
+    });
+
+    expect(guard).toContain("Never translate the operator's own words, code, or commit messages");
+    expect(guard).toContain('Commit messages stay in the repository language');
+  });
+
+  it('speaks the set language even before the operator wrote a word', () => {
+    const guard = buildSessionLanguageGuard({
+      anchor: { source: 'goal', text: '' },
+      preferred: 'it',
+    });
+
+    expect(guard).toContain('in Italian.');
+  });
 });

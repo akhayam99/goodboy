@@ -5,8 +5,9 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
 
-const { prompts, launch } = vi.hoisted(() => ({
+const { prompts, systems, launch } = vi.hoisted(() => ({
   prompts: new Array<string>(),
+  systems: new Array<string>(),
   launch: {
     beforeInsert: null as null | (() => Promise<void>),
     whileStarting: null as null | (() => Promise<void>),
@@ -24,6 +25,7 @@ vi.mock('../../../features/session/ask/activeAskBackend', async () => {
       launch.isStarted = true;
       onStarted?.();
       prompts.push(request.prompt);
+      systems.push(request.systemPrompt);
       onText('**Planner waits on [[Q1]].** [[A9]] is not real.');
       return { status: 'done' };
     },
@@ -69,6 +71,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   prompts.length = 0;
+  systems.length = 0;
   launch.beforeInsert = null;
   launch.whileStarting = null;
   launch.beforeSetModel = null;
@@ -76,6 +79,7 @@ beforeEach(async () => {
   launch.cancels.length = 0;
   useAppStore.setState({
     ...askInitialState,
+    loadWorkspaceValue: async () => null,
     sessions: [aSession({ id: SESSION, goal: 'Fix webhook retries' })],
     currentSessionId: SESSION,
     sessionPhaseRuns: {
@@ -132,6 +136,19 @@ describe('sendAskQuestion', () => {
       '- [Q1] from Planner: Stop after 5 attempts, or keep backing off?',
     );
     expect(prompts[0]?.endsWith('New question:\nWhat needs me?')).toBe(true);
+  });
+
+  it('answers in the language set for the session workspace, and in the question language on Auto', async () => {
+    await useAppStore
+      .getState()
+      .sendAskQuestion({ sessionId: SESSION, question: 'What needs me?', rightNow: [] });
+    useAppStore.setState({ loadWorkspaceValue: async () => 'it' });
+    await useAppStore
+      .getState()
+      .sendAskQuestion({ sessionId: SESSION, question: 'And now?', rightNow: [] });
+
+    expect(systems[0]).toContain('Answer in the language of the question');
+    expect(systems[1]).toContain('Answer in Italian');
   });
 
   it('never launches the provider when Stop lands while the messages are saved', async () => {

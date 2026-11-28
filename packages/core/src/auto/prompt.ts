@@ -1,3 +1,4 @@
+import type { PreferredLanguage } from '../language/preferredLanguages';
 import { sessionLanguageTurnRule } from '../language/sessionLanguage';
 import { ROLE_REGISTRY } from '../roles';
 import { roleNeedsSection } from '../roleNeeds';
@@ -167,6 +168,7 @@ type AutoSystemPromptParams = {
   readonly level?: AutoLevel;
   readonly guidance?: string | null;
   readonly languageAnchor?: string;
+  readonly preferredLanguage?: PreferredLanguage | null;
   readonly isLeadClosing?: boolean;
   readonly guide?: GuideRecord | null;
 };
@@ -189,6 +191,7 @@ export const buildAutoSystemPrompt = ({
   level = DEFAULT_AUTO_LEVEL,
   guidance = null,
   languageAnchor = '',
+  preferredLanguage = null,
   isLeadClosing = false,
   guide = null,
 }: AutoSystemPromptParams): string =>
@@ -211,7 +214,11 @@ export const buildAutoSystemPrompt = ({
     autoRoleCatalog(),
     autoRoutingTable(),
     roleNeedsSection({ driver: 'auto' }),
-    sessionLanguageTurnRule({ anchorLabel: 'message', anchorText: languageAnchor }),
+    sessionLanguageTurnRule({
+      anchorLabel: 'message',
+      anchorText: languageAnchor,
+      preferred: preferredLanguage,
+    }),
   ].join('\n\n');
 
 export const AUTO_SYSTEM_PROMPT = buildAutoSystemPrompt({

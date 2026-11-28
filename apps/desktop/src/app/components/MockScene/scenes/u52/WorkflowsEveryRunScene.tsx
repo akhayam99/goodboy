@@ -15,9 +15,10 @@ import {
 type Props = {
   readonly theme: 'dark' | 'light';
   readonly hasPlanRun: boolean;
+  readonly preferredLanguage?: string;
 };
 
-export const WorkflowsEveryRunScene = ({ theme, hasPlanRun }: Props) => {
+export const WorkflowsEveryRunScene = ({ theme, hasPlanRun, preferredLanguage }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -38,12 +39,17 @@ export const WorkflowsEveryRunScene = ({ theme, hasPlanRun }: Props) => {
       phaseTemplates: { [WORKSPACE_ID]: PRESETS },
       stepLibrary: { [WORKSPACE_ID]: [] },
       workflowStudioView: 'every',
+      workspaceValues:
+        preferredLanguage === undefined
+          ? {}
+          : { [WORKSPACE_ID]: { 'session.language': preferredLanguage } },
+      loadWorkspaceValue: async () => preferredLanguage ?? null,
       loadPhaseTemplates: async () => undefined,
       loadStepLibrary: async () => undefined,
       setWorkflowStudioVisible: noop,
     });
     setIsReady(true);
-  }, [theme, hasPlanRun]);
+  }, [theme, hasPlanRun, preferredLanguage]);
 
   if (!isReady) {
     return null;

@@ -7,9 +7,15 @@ vi.mock('@tauri-apps/api/event', async () =>
   (await import('../../../../../store/storyHarness')).tauriEventModuleMock(),
 );
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { ChatId, ChatSummary, IsoDateTime, WorkspaceId } from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../../../../store/storyHarness';
 import { brandedId } from '../../../../history/testing/brandedId';
 import { activeChatBackend, registerChatBackend } from '../../../activeChatBackend';
 import { useWorkBriefDrafts, type WorkBriefDrafts } from '../../../hooks/useWorkBriefDrafts';
@@ -55,7 +61,15 @@ const mount = () =>
     }),
   );
 
-beforeEach(() => {
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+  useAppStore.setState({ loadWorkspaceValue: async () => null });
   summarizeForWork.mockClear();
   registerChatBackend({ backend: { ...activeChatBackend, summarizeForWork } });
   room = renderHook(() => useWorkBriefDrafts({ chatId: CHAT_ID }));
@@ -87,5 +101,16 @@ describe('useWorkBrief', () => {
     const second = mount();
     await waitFor(() => expect(second.result.current.brief?.goal).toBe('Generated goal'));
     expect(summarizeForWork).toHaveBeenCalledTimes(2);
+  });
+
+  it('asks for the brief in the language set for the chat workspace', async () => {
+    useAppStore.setState({ loadWorkspaceValue: async () => 'it' });
+
+    const view = mount();
+
+    await waitFor(() => expect(view.result.current.brief?.goal).toBe('Generated goal'));
+    expect(JSON.stringify(summarizeForWork.mock.calls)).toContain(
+      'Write \\"title\\", \\"goal\\" and \\"know\\" in Italian',
+    );
   });
 });

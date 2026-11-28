@@ -1,5 +1,6 @@
 import { AUTO_GATES, buildAutoSystemPrompt } from '@goodboy/core/auto';
 import { getAutoTreeByRootAgent, getSessionById } from '@goodboy/db';
+import type { PreferredLanguage } from '@goodboy/core/language';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../../shared/lib/db';
 import { ensureRunGuide } from '../../runGuide/ensureRunGuide';
@@ -11,12 +12,14 @@ type Params = {
   readonly sessionId: SessionId;
   readonly agentId?: AgentId | null;
   readonly languageAnchor?: string;
+  readonly preferredLanguage?: PreferredLanguage | null;
 };
 
 export const autoSystemPromptOf = async ({
   sessionId,
   agentId = null,
   languageAnchor = '',
+  preferredLanguage = null,
 }: Params): Promise<string> => {
   const level = await readAutoLevel({ db: tauriDatabase, target: { sessionId } });
   const session = agentId === null ? null : await getSessionById(tauriDatabase, sessionId);
@@ -36,6 +39,7 @@ export const autoSystemPromptOf = async ({
     level,
     guidance,
     languageAnchor,
+    preferredLanguage,
     isLeadClosing,
     guide,
   });

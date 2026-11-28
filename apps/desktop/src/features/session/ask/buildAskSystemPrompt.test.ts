@@ -20,4 +20,16 @@ describe('buildAskSystemPrompt', () => {
   it('stays compact against the Ask budget', () => {
     expect(Math.ceil(prompt.length / 4)).toBeLessThan(ASK_LIVE_BUDGET_TOKENS / 4);
   });
+
+  it('answers in the set language, and in the question language on Auto', () => {
+    const italian = buildAskSystemPrompt({
+      sessionTitle: 'Stop retried webhooks',
+      hasWorktrees: true,
+      preferred: 'it',
+    });
+
+    expect(italian).toContain('Answer in Italian');
+    expect(italian).not.toContain('Answer in the language of the question');
+    expect(prompt).toContain('Answer in the language of the question');
+  });
 });

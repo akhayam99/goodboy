@@ -6,7 +6,7 @@ import type { GetFn } from './types';
 type Params = {
   readonly get: GetFn;
   readonly workspaceId: WorkspaceId;
-  readonly key: 'auto.level' | 'overrides' | 'home.layout';
+  readonly key: 'auto.level' | 'overrides' | 'home.layout' | 'session.language';
 };
 
 export const announceWorkspaceChange = ({ get, workspaceId, key }: Params): void => {

@@ -48,15 +48,17 @@ type State = {
   providerCooldowns: Record<string, number>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
   workspaceOverrides: Record<string, unknown>;
+  loadWorkspaceValue: () => Promise<string | null>;
 };
 
-const buildHarness = (run: WorkflowRun = baseRun) => {
+const buildHarness = (run: WorkflowRun = baseRun, language: string | null = null) => {
   const state: State = {
     sessions: [sessionWith(run)],
     providers: [],
     providerCooldowns: {},
     sessionWorktrees: { [SESSION_ID]: ['/tmp/worktree'] },
     workspaceOverrides: {},
+    loadWorkspaceValue: async () => language,
   };
   const set = vi.fn((updater: (s: State) => Partial<State>) => {
     Object.assign(state, updater(state));
@@ -113,6 +115,20 @@ describe('generateWorkflowRunTitle', () => {
       expect.objectContaining({ title: 'The login page loops back to itself after the OAuth' }),
     );
     expect(currentRun()?.title).toBe('The login page loops back to itself after the OAuth');
+  });
+
+  it('asks for the title in the set language', async () => {
+    invokeMock.mockResolvedValue({
+      stdout: okStdout('<title>Correggi il ciclo di login Safari</title>'),
+      stderr: '',
+      exitCode: 0,
+    });
+    updateGeneratedTitleSpy.mockResolvedValue('Correggi il ciclo di login Safari');
+    const { generate } = buildHarness(baseRun, 'it');
+
+    await generate();
+
+    expect(JSON.stringify(invokeMock.mock.calls)).toContain('written in Italian');
   });
 
   it('skips a run that has no goal to name it from', async () => {

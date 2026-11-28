@@ -81,4 +81,28 @@ describe('parseGeneratedTitle', () => {
   it('stays linear on a long run of open tags', () => {
     expect(parse('<title>'.repeat(20_000))).toBe(DERIVED);
   });
+
+  it('lets a set language beat a Spanish-looking title', () => {
+    const ask = 'Guardando payments-api, sviluppare le convenzioni sulla pagina di onboarding';
+    const title = parseGeneratedTitle({
+      providerId: 'anthropic',
+      stdout: JSON.stringify({ result: '<title>Responder pregunta sobre el contexto</title>' }),
+      ask,
+      preferred: 'it',
+    });
+
+    expect(title).toBe('Guardando payments-api');
+  });
+
+  it('keeps a title in the set language even when the request is in another one', () => {
+    const ask = 'Fix the ledger export so it finishes in under five seconds';
+    const title = parseGeneratedTitle({
+      providerId: 'anthropic',
+      stdout: JSON.stringify({ result: '<title>Velocizza esportazione del registro</title>' }),
+      ask,
+      preferred: 'it',
+    });
+
+    expect(title).toBe('Velocizza esportazione del registro');
+  });
 });

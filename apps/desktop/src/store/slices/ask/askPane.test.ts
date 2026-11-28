@@ -110,6 +110,7 @@ beforeEach(async () => {
   gates.listMessages = null;
   useAppStore.setState({
     ...askInitialState,
+    loadWorkspaceValue: async () => null,
     sessions: [aSession({ id: SESSION }), aSession({ id: OTHER })],
     currentSessionId: SESSION,
     askThreads: {

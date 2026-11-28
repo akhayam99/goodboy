@@ -6,8 +6,8 @@ import type { GetFn, SetFn } from './types';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
-  readonly key: Extract<WorkspaceValueKey, 'home.layout'>;
-  readonly value: string;
+  readonly key: Extract<WorkspaceValueKey, 'home.layout' | 'session.language'>;
+  readonly value: string | null;
 };
 
 type Deps = {
@@ -18,12 +18,15 @@ type Deps = {
 export const saveWorkspaceValue = ({ set, get }: Deps) => {
   return async ({ workspaceId, key, value }: Params): Promise<void> => {
     await setWorkspaceValue({ db: tauriDatabase, workspaceId, key, value });
-    set((state) => ({
-      workspaceValues: {
-        ...state.workspaceValues,
-        [workspaceId]: { ...state.workspaceValues[workspaceId], [key]: value },
-      },
-    }));
+    set((state) => {
+      const { [key]: _previous, ...rest } = state.workspaceValues[workspaceId] ?? {};
+      return {
+        workspaceValues: {
+          ...state.workspaceValues,
+          [workspaceId]: value === null ? rest : { ...rest, [key]: value },
+        },
+      };
+    });
     announceWorkspaceChange({ get, workspaceId, key });
   };
 };
