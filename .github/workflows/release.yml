@@ -95,6 +95,7 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           GOODBOY_BUILD_SHA: ${{ github.sha }}
+          NODE_OPTIONS: --max-old-space-size=6144
           # Updater signing: tauri-action signs the update artifacts and emits
           # latest.json (attached to the release) so the in-app updater can
           # verify and apply new versions. Its "notes" field is releaseBody,
@@ -168,6 +169,7 @@ jobs:
       - name: build bundles
         env:
           GOODBOY_BUILD_SHA: ${{ github.sha }}
+          NODE_OPTIONS: --max-old-space-size=6144
         run: pnpm --filter @goodboy/desktop exec tauri build --bundles appimage,deb,rpm --no-sign
 
       - name: upload bundles
