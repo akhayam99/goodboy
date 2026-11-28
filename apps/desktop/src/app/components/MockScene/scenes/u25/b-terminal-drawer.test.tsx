@@ -68,10 +68,7 @@ type DrawerParams = {
 };
 
 const shellTabsIn = ({ drawer }: DrawerParams): ReadonlyArray<HTMLElement> => {
-  const worktrees = within(drawer).queryByRole('tablist', { name: 'Worktrees' });
-  return within(drawer)
-    .getAllByRole('tab')
-    .filter((tab) => worktrees === null || !worktrees.contains(tab));
+  return within(drawer).getAllByRole('tab');
 };
 
 describe('the terminal drawer scenes', () => {
@@ -96,7 +93,7 @@ describe('the terminal drawer scenes', () => {
     expect(after.map((tab) => tab.id)).toEqual(before.map((tab) => tab.id));
     expect(drawer?.kind === 'terminal' ? drawer.payload.terminalId : null).toMatch(/::t2$/);
     expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
-      'hl/surface-retry-state· gb-2p6w0z',
+      'notify-relay · hl/surface-retry-state· gb-2p6w0z',
     );
   });
 
@@ -107,7 +104,7 @@ describe('the terminal drawer scenes', () => {
     const drawer = screen.getByRole('region', { name: 'Terminal' });
     expect(within(drawer).queryByTestId('worktree-chip')).toBeNull();
     expect(within(drawer).getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
-      'hl/fix-webhook-idempotency· gb-7k2q9x',
+      'payments-api · hl/fix-webhook-idempotency· gb-7k2q9x',
     );
     expect(within(drawer).getByRole('heading', { name: 'Terminal' })).toBeDefined();
     expect(within(drawer).queryByRole('combobox', { name: 'New terminal in' })).toBeNull();
@@ -128,7 +125,7 @@ describe('the terminal drawer scenes', () => {
 
     const drawer = screen.getByRole('region', { name: 'Terminal' });
     const picker = within(drawer).getByRole('combobox', { name: 'Terminal folder' });
-    expect(picker.textContent).toBe('hl/fix-webhook-idempotency· gb-7k2q9x');
+    expect(picker.textContent).toBe('payments-api · hl/fix-webhook-idempotency· gb-7k2q9x');
     const header = drawer.querySelector('[data-drawer-header-row]');
     expect(header?.contains(within(drawer).getByRole('button', { name: /^More on / }))).toBe(true);
     expect(within(drawer).queryByText('Open full page')).toBeNull();

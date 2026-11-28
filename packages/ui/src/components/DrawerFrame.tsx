@@ -150,7 +150,7 @@ export const DrawerFrame = ({
     </>
   );
 
-  const hasStepAside = !isHeaderless && (meta != null || hasToolbar);
+  const hasStepAside = !isHeaderless && (isDock ? hasToolbar : meta != null || hasToolbar);
   const backLink =
     back === undefined || stepBack === undefined ? null : <DrawerBackLink back={back} />;
   const body =
@@ -178,7 +178,7 @@ export const DrawerFrame = ({
           titleContent={titleContent}
           icon={Icon}
           iconClassName={iconClassName}
-          count={count}
+          count={count ?? meta}
           actions={action}
           menu={menu}
           page={page}
@@ -217,6 +217,7 @@ export const DrawerFrame = ({
                 meta={meta}
                 metaInsetPx={Icon == null ? HEADER_INSET_PX : META_INSET_WITH_ICON_PX}
                 toolbar={toolbar}
+                isDock={isDock}
               />
             ) : null
           }

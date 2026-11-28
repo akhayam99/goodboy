@@ -145,10 +145,17 @@ export const DockPanelHead = ({
               {titleContent}
             </div>
           ) : (
-            <h2 className="min-w-0 truncate text-heading text-foreground">{title}</h2>
+            <h2
+              className={cn(
+                'min-w-0 truncate text-heading text-foreground',
+                count != null && 'shrink-0',
+              )}
+            >
+              {title}
+            </h2>
           )}
           {count != null ? (
-            <span className="flex min-w-0 shrink-[4] items-center text-meta tabular-nums text-muted-foreground">
+            <span className="block min-w-0 shrink-[4] truncate text-meta tabular-nums text-muted-foreground">
               {count}
             </span>
           ) : null}

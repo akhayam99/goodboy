@@ -1,4 +1,4 @@
-import { DrawerFrame, SearchField } from '@goodboy/ui';
+import { DockToolRow, DrawerFrame, SearchField } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { useMonitorPolling } from '../../../../shared/hooks/useMonitorPolling';
 import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
@@ -43,12 +43,14 @@ export const MonitoringDrawer = ({ onClose }: Props) => {
       action={hasRows ? <PinPortPopover isIcon /> : null}
       toolbar={
         hasRows ? (
-          <SearchField
-            ariaLabel={NAMES.searchPorts}
-            placeholder={NAMES.searchPorts}
-            value={model.query}
-            onChange={(query) => setMonitoringQuery({ workspaceId: model.workspaceId, query })}
-          />
+          <DockToolRow>
+            <SearchField
+              ariaLabel={NAMES.searchPorts}
+              placeholder={NAMES.searchPorts}
+              value={model.query}
+              onChange={(query) => setMonitoringQuery({ workspaceId: model.workspaceId, query })}
+            />
+          </DockToolRow>
         ) : null
       }
       page={{

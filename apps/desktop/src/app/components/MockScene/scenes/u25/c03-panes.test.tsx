@@ -94,7 +94,7 @@ describe('c03 session tools scenes', () => {
     expect(useAppStore.getState().drawer?.kind).toBe('terminal');
     expect(pressed()).toEqual(['Terminal, 2 running']);
     expect(screen.getByRole('combobox', { name: 'Terminal folder' }).textContent).toBe(
-      'hl/fix-duplicate-credit· payments-api-backfill',
+      'payments-api · hl/fix-duplicate-credit· payments-api-backfill',
     );
   });
 

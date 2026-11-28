@@ -76,6 +76,7 @@ export {
 export type { DrawerMode, DrawerPlacement, DrawerSizing, PageTier } from './drawerGeometry';
 export { DrawerFrame } from './components/DrawerFrame';
 export { DockPanelHead } from './components/DockPanelHead';
+export { DockToolRow } from './components/DockToolRow';
 export { MidTruncate } from './components/MidTruncate';
 export { midTruncate } from './midTruncate';
 export type { MidTruncated } from './midTruncate';

@@ -25,9 +25,7 @@ import { TerminalScriptsMenu } from '../TerminalStudio/TerminalScriptsMenu';
 import { TerminalStripActions } from '../TerminalStudio/TerminalStripActions';
 import { TerminalTabStrip } from '../TerminalStudio/TerminalTabStrip';
 import { TerminalCommandSuggestion } from './TerminalCommandSuggestion';
-import { TerminalElsewhereNote } from './TerminalElsewhereNote';
 import { TerminalScopePicker } from './TerminalScopePicker';
-import { TerminalWorktreeTabs } from './TerminalWorktreeTabs';
 import { useWorktreeTabs } from './useWorktreeTabs';
 
 type Props = {
@@ -175,34 +173,23 @@ export const TerminalDrawerBody = ({ workspaceId, sessionId, worktreeKey, onClos
       onClose={onClose}
       scroll="self"
     >
-      <div
-        onKeyDown={handleKeyDown}
-        className="flex h-full min-h-0 flex-1 flex-col gap-2 pb-2 pt-1"
-      >
-        <div className="flex min-w-0 items-center overflow-hidden px-2">
-          <TerminalScopePicker
-            worktree={worktree}
-            targets={targets}
-            isBranchless={isBranchless}
-            hasTrackTabs={tracks.tabs.length > 1}
-            busyPaths={busyPaths}
-            elsewhere={elsewhere}
-            onPickTarget={pickTarget}
-            onPickSessionFolder={pickSessionFolder}
-            onPickAll={() => openTerminalOnPage({ terminalId: selected.id, sessionId })}
-            onPickElsewhere={(shell) => pickElsewhereShell({ shell })}
-          />
-        </div>
-        {elsewhereNote === null ? null : <TerminalElsewhereNote note={elsewhereNote} />}
-        {tracks.tabs.length < 2 ? null : (
-          <TerminalWorktreeTabs
-            tabs={tracks.tabs}
-            selectedMountId={selectedMountId}
-            onSelect={tracks.pick}
-          />
-        )}
+      <div onKeyDown={handleKeyDown} className="flex h-full min-h-0 flex-1 flex-col gap-2 pb-2">
         <TerminalTabStrip
           isUnderHead
+          scope={
+            <TerminalScopePicker
+              worktree={worktree}
+              targets={targets}
+              isBranchless={isBranchless}
+              busyPaths={busyPaths}
+              elsewhere={elsewhere}
+              elsewhereNote={elsewhereNote}
+              onPickTarget={pickTarget}
+              onPickSessionFolder={pickSessionFolder}
+              onPickAll={() => openTerminalOnPage({ terminalId: selected.id, sessionId })}
+              onPickElsewhere={(shell) => pickElsewhereShell({ shell })}
+            />
+          }
           label={worktree.projectName}
           tabs={model.tabs}
           selectedId={selected.id}

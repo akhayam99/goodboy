@@ -78,8 +78,11 @@ Every dock panel opens with the same 40px head (`DockPanelHead` from `@goodboy/u
 drawn by `DrawerFrame` with `isDock`): title or tab strip, at most two actions, a
 menu, Close in the same place, no grip icon. A head that is not a `DockPanelHead`
 fails `panel-head.test.ts`. The Browser keeps Back, Forward, Reload and the address
-as its body's first row (`BrowserAddressRow`), the Terminal its folder picker and
-worktree strip, and Monitor its Pin a port action as a pin icon in the head.
+as its body's first row (`BrowserAddressRow`), the Terminal its folder chip, shell tabs
+and Scripts menu as one row (`DockToolRow`, 36px), and Monitor its Pin a port action as
+a pin icon in the head with its summary beside the title and its search as one
+`DockToolRow`. A panel has at most one tool row under its head, and a merged slot adds
+none: its tabs are the head's.
 
 - **Tabbed cells.** The tab strip takes the title's place (focus follows the
   selected tab when the head remounts), and each tab segment is its own handle for
@@ -100,7 +103,9 @@ worktree strip, and Monitor its Pin a port action as a pin icon in the head.
   solves the rest again, and a `Merge` on its own cell is never drawn. The ghost and the
   committed move read the same layout (`dockLayoutAfterMove`), so a torn tab lands where
   its pill says (`dockFoldedTear.test.ts`).
-  1. A press becomes a drag after 4px, so a click stays a click; a press on a control
+  1. A press becomes a drag after 4px, so a click stays a click (the pointer is
+     captured only past the 4px, since an early capture sends the click of a tab
+     segment to the head and the merged tools cannot be switched); a press on a control
      in the head, or in a layer it portals out (a menu, the address suggestions),
      never starts one.
   2. While dragging, `DockDropZones` draws one floating pill per target (`Place left` and
