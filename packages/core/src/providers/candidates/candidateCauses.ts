@@ -43,11 +43,11 @@ export const CANDIDATE_CAUSES = {
     adjustment: 'disconnected',
   },
   'not-for-helpers': {
-    text: 'not used: cannot keep it read-only yet',
+    text: 'cannot keep it read-only yet, so not used',
     adjustment: 'disconnected',
   },
   writer: {
-    text: 'read-only jobs only: cannot block its pushes yet',
+    text: 'cannot block its pushes yet, so read-only jobs only',
     adjustment: 'disconnected',
   },
   'no-model': { text: 'no model here fits this step', adjustment: 'unknown_model' },
@@ -69,8 +69,8 @@ type NamedCauseParams = {
 const NAMED_CAUSE_TEXT: Readonly<
   Partial<Record<CandidateCause, (params: NamedCauseParams) => string>>
 > = {
-  'not-for-helpers': ({ name }) => `not used: cannot keep ${name} read-only yet`,
-  writer: ({ name }) => `read-only jobs only: cannot block ${name}'s pushes yet`,
+  'not-for-helpers': ({ name }) => `cannot keep ${name} read-only yet, so not used`,
+  writer: ({ name }) => `cannot block ${name}'s pushes yet, so read-only jobs only`,
 };
 
 type CauseTextParams = {

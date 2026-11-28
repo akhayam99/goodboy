@@ -150,7 +150,7 @@ describe('RoleCandidates', () => {
     expect(out.length).toBeGreaterThan(0);
     expect(
       out.every((row) =>
-        row.text.includes("read-only jobs only: cannot block Cursor's pushes yet"),
+        row.text.includes("cannot block Cursor's pushes yet, so read-only jobs only"),
       ),
     ).toBe(true);
     expect(rows.some((row) => row.text.includes('is #2 in your order'))).toBe(false);

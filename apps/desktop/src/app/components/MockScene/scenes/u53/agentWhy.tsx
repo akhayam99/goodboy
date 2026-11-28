@@ -56,7 +56,7 @@ const MOVED_PICK: AutoRouting = {
   model: 'sonnet-5.5',
   effort: 'medium',
   reason:
-    "The Lead asked for Cursor Sonnet 5.5: read-only jobs only: cannot block Cursor's pushes yet. Claude: first in your order.",
+    "The Lead asked for Cursor Sonnet 5.5: cannot block Cursor's pushes yet, so read-only jobs only. Claude: first in your order.",
   proposal: 'replaced',
   source: 'fallback',
   cause: 'writer',

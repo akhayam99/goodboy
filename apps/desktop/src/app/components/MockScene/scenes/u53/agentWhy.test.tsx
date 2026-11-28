@@ -79,7 +79,7 @@ describe('an agent names its provider, model and why', () => {
     );
     const struck = rows.filter((row) => row.hasAttribute('data-candidate-struck'));
     expect(struck.map((row) => row.textContent)).toEqual([
-      expect.stringContaining("read-only jobs only: cannot block Cursor's pushes yet"),
+      expect.stringContaining("cannot block Cursor's pushes yet, so read-only jobs only"),
     ]);
   });
 
@@ -96,7 +96,7 @@ describe('an agent names its provider, model and why', () => {
 
     fireEvent.click(within(brief).getByRole('button', { name: 'Candidates it weighed' }));
     within(brief).getByText(
-      /asked by the Lead · read-only jobs only: cannot block Cursor's pushes yet/,
+      /asked by the Lead · cannot block Cursor's pushes yet, so read-only jobs only/,
     );
   });
 

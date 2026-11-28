@@ -27,16 +27,16 @@ describe('CANDIDATE_CAUSES', () => {
 
   it('names the provider in the two reasons that blame it', () => {
     expect(candidateCauseTextOf({ cause: 'writer', providerName: 'Cursor' })).toBe(
-      "read-only jobs only: cannot block Cursor's pushes yet",
+      "cannot block Cursor's pushes yet, so read-only jobs only",
     );
     expect(candidateCauseTextOf({ cause: 'not-for-helpers', providerName: 'OpenCode' })).toBe(
-      'not used: cannot keep OpenCode read-only yet',
+      'cannot keep OpenCode read-only yet, so not used',
     );
   });
 
   it('falls back to the plain sentence without a provider name', () => {
     expect(candidateCauseTextOf({ cause: 'writer', providerName: null })).toBe(
-      'read-only jobs only: cannot block its pushes yet',
+      'cannot block its pushes yet, so read-only jobs only',
     );
     expect(candidateCauseTextOf({ cause: 'cooldown', providerName: 'Claude' })).toBe(
       CANDIDATE_CAUSES.cooldown.text,

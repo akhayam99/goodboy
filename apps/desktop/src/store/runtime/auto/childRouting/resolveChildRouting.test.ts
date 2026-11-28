@@ -375,7 +375,7 @@ describe('the Lead picks each helper from the candidates', () => {
 
     expect(outcome).toMatchObject({ provider: 'anthropic', source: 'fallback', cause: 'writer' });
     expect(outcome.reason).toContain('The Lead asked for Cursor');
-    expect(outcome.reason).toContain("read-only jobs only: cannot block Cursor's pushes yet");
+    expect(outcome.reason).toContain("cannot block Cursor's pushes yet, so read-only jobs only");
     expect(outcome.reason).toContain('Claude: first in your order');
   });
 
