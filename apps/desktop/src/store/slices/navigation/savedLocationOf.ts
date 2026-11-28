@@ -7,8 +7,14 @@ type Params = {
 
 export const savedLocationOf = ({ location }: Params): Location => {
   const { drawer } = location.focus;
-  if (drawer === null || !UNSAVED_DRAWER_KINDS.has(drawer.kind)) {
+  const place: Location['place'] = location.place.at === 'home' ? { at: 'board' } : location.place;
+  const isDrawerUnsaved = drawer !== null && UNSAVED_DRAWER_KINDS.has(drawer.kind);
+  if (place === location.place && !isDrawerUnsaved) {
     return location;
   }
-  return { ...location, focus: { ...location.focus, drawer: null } };
+  return {
+    ...location,
+    place,
+    focus: isDrawerUnsaved ? { ...location.focus, drawer: null } : location.focus,
+  };
 };

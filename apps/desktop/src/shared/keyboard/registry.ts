@@ -33,7 +33,7 @@ export type ShortcutScope =
   | 'ask'
   | 'chatPage'
   | 'terminalPage'
-  | 'home'
+  | 'workspaces'
   | 'find'
   | 'overview'
   | 'row'
@@ -807,7 +807,7 @@ export const SHORTCUTS = {
     label: NAMES.newWorkspace,
     plane: 'app',
     group: 'workspaces',
-    scope: 'home',
+    scope: 'workspaces',
   },
   'chat.new': { combo: 'cmd+shift+KeyN', label: 'New chat', plane: 'session', group: 'general' },
   ...WINDOW_SHORTCUTS,

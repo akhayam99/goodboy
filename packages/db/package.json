@@ -12,6 +12,10 @@
       "types": "./src/queries/mount-pr-link.ts",
       "default": "./src/queries/mount-pr-link.ts"
     },
+    "./session-error-repair": {
+      "types": "./src/queries/session-error-repair.ts",
+      "default": "./src/queries/session-error-repair.ts"
+    },
     "./turn-role-insight": {
       "types": "./src/queries/turn-role-insight.ts",
       "default": "./src/queries/turn-role-insight.ts"

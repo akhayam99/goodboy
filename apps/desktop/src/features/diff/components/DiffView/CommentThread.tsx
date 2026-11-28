@@ -17,7 +17,9 @@ import { CommentComposer } from './CommentComposer';
 import { CommentBody } from '../../../../shared/components/CommentBody';
 import { ThreadReplies } from '../../../../shared/components/ThreadReplies';
 import { repliesLabel } from '../../../../shared/utils/repliesLabel';
+import { ThreadFixVerb } from './ThreadFixVerb';
 import { ThreadKindChip } from './ThreadKindChip';
+import { ThreadOutdatedChip } from './ThreadOutdatedChip';
 import { ThreadWho } from './ThreadWho';
 import { kindLabelOf } from './threadKind';
 import { useHostThreadVerbs } from '../../hooks/useHostThreadVerbs';
@@ -154,12 +156,14 @@ export const CommentThread = ({ thread, comments, outcome = null }: Props) => {
         <ThreadKindChip thread={thread} />
         {outcome}
         <Chip tone={thread.tone} kind="state" bordered={false} label={thread.statusLabel} />
+        <ThreadOutdatedChip thread={thread} />
         <span>{formatAge({ from: thread.createdAt, now })}</span>
         {replyCount > 0 ? <span>{repliesLabel({ count: replyCount })}</span> : null}
         <span className="ml-auto flex shrink-0 items-center gap-1">
           {(thread.actions ?? []).map((action) => (
             <ThreadActionButton key={action.id} action={action} />
           ))}
+          <ThreadFixVerb thread={thread} />
           {verbs.canReply ? (
             <button
               type="button"

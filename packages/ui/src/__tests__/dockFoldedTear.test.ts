@@ -7,7 +7,7 @@ import { dockGridFrameOf } from '../dockGridFrameOf';
 import { dockFoldedOf, dockGhostOf } from '../dockGhostOf';
 import { dockLayoutAfterMove, type DockGroups, type DockLayout } from '../dockLayoutAfterMove';
 import { dockMoveFits } from '../dockMoveFits';
-import { dockSolverOf } from '../dockLayout';
+import { solveDock } from '../dockLayout';
 import { READER_DRAWER_DEFAULT, RIGHT_DRAWER_DEFAULT } from '../drawerGeometry';
 import { SHELL_GUTTER_PX } from '../frameGeometry';
 
@@ -37,11 +37,11 @@ const COLUMNS: ReadonlyArray<ReadonlyArray<string>> = [
 const cellOf = ({ key }: { readonly key: string }): Cell =>
   CELLS[key] ?? { sizing: 'side', savedWidth: RIGHT_DRAWER_DEFAULT };
 
-const solve = dockSolverOf({ isLane: true });
+const solve = solveDock;
 
 const solvedOf = ({ columns, groups }: DockLayout) =>
   solve({
-    columnWidth: LANE_1440,
+    columnWidth: LANE_1440 + 700,
     columnHeight: HEIGHT,
     railWidth: 0,
     canPush: true,

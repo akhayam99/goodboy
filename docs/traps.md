@@ -172,6 +172,7 @@ Before you change something that looks wrong:
 - [A send writes its row before it delivers](traps/store.md#a-send-writes-its-row-before-it-delivers)
 - [Banner clicks reach every window](traps/store.md#banner-clicks-reach-every-window-and-the-badge-has-one-writer)
 - [Two attention counts per workspace](traps/store.md#two-counts-for-one-workspace-and-the-rust-count-is-a-subset)
+- [A settled branch hides only what its times prove](traps/store.md#a-settled-branch-hides-only-what-its-times-prove)
 - [Hand-maintained lists the compiler does not check](traps/store.md#hand-maintained-lists-the-compiler-does-not-check)
 - [The bell sweep names its proof per family](traps/store.md#the-bell-sweep-names-its-proof-per-family)
 - [The auto role stays out of visible lists](traps/store.md#the-auto-role-stays-out-of-every-list-a-person-sees)

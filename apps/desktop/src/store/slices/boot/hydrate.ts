@@ -23,6 +23,7 @@ import {
   SETTING_REOPEN_LAST,
 } from '../../../features/settings/settings';
 import { readBackendRunIds, reconcileGhostAgents } from '../sessions/reconcileSessionRuns';
+import { repairErroredSessions } from '../sessions/repairErroredSessions';
 import { recoverStagedFileVersions } from '../file-versions/recoverStagedFileVersions';
 import { createFolderSnapshotPort } from '../file-versions/createFolderSnapshotPort';
 import { startFolderVersions } from '../file-versions/startFolderVersions';
@@ -200,6 +201,7 @@ const recoverFileVersions = async ({ set, get }: StoreParams): Promise<void> => 
 const stopGhostRuns = async (): Promise<ReadonlySet<string>> => {
   const liveRunIds = await readBackendRunIds();
   await reconcileGhostAgents({ liveRunIds }).catch(() => 0);
+  await repairErroredSessions();
   return new Set(liveRunIds ?? []);
 };
 

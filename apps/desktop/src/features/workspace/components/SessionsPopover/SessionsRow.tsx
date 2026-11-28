@@ -15,7 +15,6 @@ import { SessionRowTitle } from '../SessionRowTitle';
 import { useSessionRowFacts } from '../../hooks/useSessionRowFacts';
 import { useFleetPhrase } from '../../hooks/useFleetPhrase';
 import { useSessionMoveCount } from '../../hooks/useSessionMoveCount';
-import { useSavedSessionFace } from '../../hooks/useSavedSessionFace';
 import { switcherDotOf } from './switcherDotOf';
 
 type Props = {
@@ -41,7 +40,6 @@ export const SessionsRow = ({
   const sessionId = brandId<SessionId>({ value: session.id });
   const phrase = useFleetPhrase({ sessionId });
   const moveCount = useSessionMoveCount({ session, info: summary.info });
-  const face = useSavedSessionFace({ sessionId });
   const pinLabel = isPinned ? NAMES.unpin : NAMES.pin;
   const dot = switcherDotOf({ id: session.id, info: summary.info });
   const shown: StatusMarkSpec = dot === null ? mark : { kind: 'dot', tone: dot };
@@ -76,11 +74,6 @@ export const SessionsRow = ({
         label={needsYouText({ count: moveCount, unit: 'items' })}
         testId="sessions-needs-you"
       />
-      {face === 'desk' ? (
-        <span data-sessions-face="desk" className="shrink-0 text-meta text-muted-foreground">
-          {NAMES.desk}
-        </span>
-      ) : null}
       <Tooltip content={pinLabel} side="right">
         <span
           aria-hidden

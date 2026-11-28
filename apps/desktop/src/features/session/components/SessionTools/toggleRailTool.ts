@@ -23,9 +23,6 @@ export const toggleRailTool = ({ pane, sessionId }: Params): void => {
     state.toggleDrawer({ kind: 'monitoring', sessionId: null, payload: null });
     return;
   }
-  if (sessionId === null) {
-    return;
-  }
   if (pane === 'scripts') {
     state.toggleDrawer({ kind: 'scripts', sessionId, payload: null });
     return;

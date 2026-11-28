@@ -57,6 +57,12 @@ describe('windowLayout', () => {
     expect(parseLocation({ value: { place: { at: 'session' } } })).toBeNull();
   });
 
+  it('reads a home place a later build stored', () => {
+    expect(parseLocation({ value: { place: { at: 'home' }, studio: null } })?.place).toEqual({
+      at: 'home',
+    });
+  });
+
   it('restores a saved session place without the session studio older builds stored', () => {
     const location = parseLocation({
       value: {

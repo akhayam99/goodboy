@@ -16,7 +16,7 @@ const FEATURES = resolve(ROOT, 'FEATURES.md');
 const CARDS = resolve(ROOT, 'website/src/pages/features/features.data.json');
 const DIRECTORY = resolve(ROOT, 'docs/features');
 const AREAS = [
-  ['setup', 'Set up', ['Your agents', 'Your first workspace', 'Home', 'Integrations']],
+  ['setup', 'Set up', ['Your agents', 'Your first workspace', 'Workspaces', 'Integrations']],
   [
     'start',
     'Start a task',

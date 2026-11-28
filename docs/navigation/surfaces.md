@@ -1,6 +1,6 @@
 # Surfaces
 
-> **Read this when** you change the app layout: the slots, the places rail, the Desk, a parked drawer, the header actions of a page, or what a surface shows while it loads. **Not for** the drawer's geometry and slot store ([right-drawer.md](right-drawer.md)), the dock grid ([dock-grid.md](dock-grid.md)) or the top bar ([shell.md](shell.md#top-bar)).
+> **Read this when** you change the app layout: the slots, the places rail, a parked drawer, the header actions of a page, or what a surface shows while it loads. **Not for** the drawer's geometry and slot store ([right-drawer.md](right-drawer.md)), the dock grid ([dock-grid.md](dock-grid.md)) or the top bar ([shell.md](shell.md#top-bar)).
 
 ## Shell layout
 
@@ -71,47 +71,25 @@ it. A tool beside a reader stays on screen with it
 
 - **Esc in the session** closes the top of the slot, then the drawer from the chip,
   before the page goes up ([session-rail.md](session-rail.md#esc-is-one-ladder)). It
-  never changes Overview and Desk.
+  never changes the page.
 - ⌘⇧W (Ctrl+F4 off macOS, File › Close the panel) closes the top of the slot from
   anywhere, a focused terminal or web page included; an open menu or dialog takes it
   first, and a parked drawer is never closed.
 - The right rail shows the slot: the tool in the slot is pressed, the one in the chip
   waiting ([session-tools.md](session-tools.md#tool-states)).
 
-## The tools build the Desk
+## The tools open in the dock
 
-A tool is what the Desk draws with content: a grid cell, a detail of the tool kind
-(Scripts), or the session's Ask; readers do not count (`deskToolsOf`). The Desk is a
-frame of the same solver: `DeskBody` draws a `DockLane` beside its column and
-`dockLayoutOf` lays the tools in it with `isDesk`, while the head, the tabs and the
-right rail stay the session's.
+A tool is a grid cell of the dock, a detail of the tool kind (Scripts), or the
+session's Ask. The dock sits beside the page on every screen and the page narrows to
+make room; the head, the tabs and the right rail stay the page's.
 
-- **No switch and no key.** A tool opened on the Overview, from the rail or its key,
-  splits the page (`useDeskFollowsTools`).
-- **Entering again** reopens the tools the session had (`landingOf`, the entry rule
-  every door asks); with none, the whole Overview.
-- **Bring it here.** A door that brings the Desk with nothing kept opens a tool at
-  once, in order: the tools of the first move of Next, the agent of Now, the first
-  project's terminal, the workspace folder's terminal. It only picks a tool the Desk
-  can draw (`DESK_OPENS`, today the terminal), after the saved grid is read; a Desk
-  saved with no tool comes back as the Overview with no line (`useDeskLanding`).
-- **Closing the last tool** (its X, ⌘⇧W or ⌘W) closes the Desk: the Overview returns
-  with **Desk closed** and **Reopen** in the banner under the head, focus on Reopen,
-  history unchanged. Reopen brings the tools back as they were.
-
-### One window holds the Desk
-
-One window holds a session's Desk (`desk_hold`, `window_heartbeat.rs`), read from
-the live windows only: a closed window, or one whose heartbeat stopped, frees it.
-
-- Another window on the session stays on the Overview with **Desk open in another
-  window** and **Bring it here**, and a tool opened there says the same instead of
-  splitting the page.
-- The window that loses it returns to the Overview with **Desk moved to another
-  window** and **Bring the Desk back**, written in the page, not a toast, its shells
-  still running.
-- A holder change goes to every window as `desk-holder`, and a window showing one of
-  these lines asks again every 5 seconds.
+- **No face, no switch and no key.** A tool opened from the rail or its key opens in
+  the dock, on the Overview as on Runs. Nothing rewrites the page.
+- **Closing the last tool** (its X, ⌘⇧W or ⌘W) leaves the page whole, history
+  unchanged.
+- **The window owns the tools.** What is open stays open from one place to the next
+  ([dock-grid.md](dock-grid.md#the-grid-saved-on-the-session)).
 
 ## The places rail
 

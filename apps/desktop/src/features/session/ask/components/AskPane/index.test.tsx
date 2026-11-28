@@ -169,7 +169,6 @@ describe('the Ask panel in the dock', () => {
     expect(selectGridTool({ state: useAppStore.getState(), kind: 'ask' })?.sessionId).toBe(
       FLOW_SESSION_ID,
     );
-    expect(useAppStore.getState().sessionFace[FLOW_SESSION_ID] ?? 'overview').toBe('overview');
     expect(document.querySelector('[data-session-desk]')).toBeNull();
     expect(selectDetailDrawer({ state: useAppStore.getState() })).toBeNull();
   });

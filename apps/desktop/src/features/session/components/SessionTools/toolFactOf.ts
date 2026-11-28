@@ -5,19 +5,9 @@ type Params = {
   readonly runningCount: number;
   readonly tabCount: number | null;
   readonly portsFact: string | null;
-  readonly isSessionMissing: boolean;
 };
 
-export const toolFactOf = ({
-  pane,
-  runningCount,
-  tabCount,
-  portsFact,
-  isSessionMissing,
-}: Params): string | null => {
-  if (isSessionMissing) {
-    return 'open a session first';
-  }
+export const toolFactOf = ({ pane, runningCount, tabCount, portsFact }: Params): string | null => {
   if (pane === 'terminal' && runningCount > 0) {
     return `${runningCount} running`;
   }

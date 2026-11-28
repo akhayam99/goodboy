@@ -2,13 +2,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import {
-  DELAY_STEP_MS,
-  DRAWER_EXIT_MS,
-  DURATION_BASE_MS,
-  DURATION_QUICK_MS,
-  DURATION_SLOW_MS,
-} from '@goodboy/ui';
+import { DRAWER_EXIT_MS, DURATION_BASE_MS, DURATION_QUICK_MS } from '@goodboy/ui';
 
 const DESKTOP_SRC = join(__dirname, '..', '..');
 const CSS = readFileSync(join(DESKTOP_SRC, 'styles.css'), 'utf8');
@@ -95,15 +89,6 @@ describe('the motion registry names every keyframe and only those', () => {
     expect(CSS).toMatch(/--animate-pane-in:\s*pane-in\s+var\(--duration-base\)/);
   });
 
-  it('registers the face pair: face-out fades quick, face-in slides slow after it', () => {
-    expect(keyframeNames()).toEqual(expect.arrayContaining(['face-out', 'face-in']));
-    expect(CSS).toMatch(/--animate-face-out:\s*face-out\s+var\(--duration-quick\)/);
-    expect(CSS).toMatch(
-      /face-in var\(--duration-slow\) var\(--ease-enter\) var\(--duration-quick\) both/,
-    );
-    expect(CSS).toMatch(/animation-delay: calc\(var\(--duration-quick\) \+ var\(--delay-step\)\)/);
-  });
-
   it('keeps PaneSwap on live layers, never on a snapshot copy', () => {
     const source = readFileSync(
       join(DESKTOP_SRC, '..', '..', '..', 'packages', 'ui', 'src', 'components', 'PaneSwap.tsx'),
@@ -122,8 +107,6 @@ describe('time is three durations and two curves', () => {
   it('pins each duration token to its constant in packages/ui', () => {
     expect(tokenMs('--duration-quick')).toBe(DURATION_QUICK_MS);
     expect(tokenMs('--duration-base')).toBe(DURATION_BASE_MS);
-    expect(tokenMs('--duration-slow')).toBe(DURATION_SLOW_MS);
-    expect(tokenMs('--delay-step')).toBe(DELAY_STEP_MS);
     expect(DRAWER_EXIT_MS).toBe(DURATION_QUICK_MS);
   });
 

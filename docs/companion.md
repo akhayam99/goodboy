@@ -553,7 +553,7 @@ owns a second workspace. `needsYouOf` itself is a pure function and counts the
 moves of several workspaces as soon as it is given their sessions and stage
 infos. What the other workspaces lack in the store is the facts behind the
 infos (PR checks, resolve threads, live agents, open questions). The workspace
-switcher, the Home rows and the notification center read them from
+switcher, the Workspaces rows and the notification center read them from
 `workspaces_attention` (through `attentionByWorkspaceOf`), which keeps only a count, a tone and
 five reasons per workspace and cannot name a session. A projection that
 crosses workspaces needs each workspace's facts in memory, not a second

@@ -9,11 +9,10 @@ type Props = {
   readonly sessionId: SessionId;
   readonly cards: ReadonlyArray<ActionCardModel>;
   readonly actionsFor: ActionCardActions['actionsFor'];
-  readonly openFor: ActionCardActions['openFor'];
   readonly hasFilledMove: boolean;
 };
 
-export const NextSection = ({ sessionId, cards, actionsFor, openFor, hasFilledMove }: Props) => {
+export const NextSection = ({ sessionId, cards, actionsFor, hasFilledMove }: Props) => {
   if (cards.length === 0) {
     return null;
   }
@@ -32,7 +31,6 @@ export const NextSection = ({ sessionId, cards, actionsFor, openFor, hasFilledMo
           sessionId={sessionId}
           card={card}
           actionsFor={actionsFor}
-          openFor={openFor}
           density="row"
           isPrimary={hasFilledMove && index === 0}
           project={null}

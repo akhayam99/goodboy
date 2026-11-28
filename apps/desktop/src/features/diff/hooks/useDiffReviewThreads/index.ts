@@ -1,11 +1,19 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core/review-source';
-import type { MountId, PrComment, SessionId } from '@goodboy/types';
+import type {
+  MountId,
+  PrComment,
+  ResolveAttempt,
+  ResolveQueueItemWithThread,
+  SessionId,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { mountReviewGithub } from '../../../review/mountReviewGithub';
 import { groupThreads } from '../../../integrations/github/comment-threads';
 import type { DiffThread, DiffThreadHost } from '../../components/DiffView/types';
 import { replyOnHostThread, resolveHostThread } from '../../lib/hostThreadVerbs';
+import { buildResolveQueueRows } from '../../../resolve/buildResolveQueueRows';
+import { hostThreadStatusOf } from '../../lib/hostThreadStatusOf';
 import { useHostSource } from '../useHostSource';
 import { hostDiffThreadId, hostThreadIdOf } from '../../lib/threadIds';
 
@@ -23,13 +31,22 @@ export type DiffReviewThreads = {
 
 const NO_COMMENTS: ReadonlyArray<PrComment> = [];
 const NO_THREADS: ReadonlyArray<DiffThread> = [];
+const NO_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [];
+const NO_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
 export const useDiffReviewThreads = ({ sessionId, mountId }: Params): DiffReviewThreads => {
   const github = useAppStore((s) =>
     mountId === null ? null : mountReviewGithub({ state: s, sessionId, mountId }),
   );
-  const source = useHostSource({ sessionId });
+  const source = useHostSource({ sessionId, mountId });
   const openReviewTarget = useAppStore((s) => s.openReviewTarget);
+  const hasMountRequest = useAppStore((s) =>
+    mountId === null ? false : s.mountGithub[mountId]?.pr != null,
+  );
+  const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
+  const refreshReviewSource = useAppStore((s) => s.refreshReviewSource);
+  const queueItems = useAppStore((s) => s.sessionResolveQueueItems[sessionId] ?? NO_ITEMS);
+  const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? NO_ATTEMPTS);
 
   const otherHost =
     source !== null &&
@@ -43,6 +60,42 @@ export const useDiffReviewThreads = ({ sessionId, mountId }: Params): DiffReview
   const comments =
     otherHost === null ? (github?.detail?.comments ?? NO_COMMENTS) : otherHost.comments;
 
+  const hasThreads = otherHost === null ? github?.detail != null : otherHost.hasDetail;
+  const isOtherHost = otherHost !== null;
+  useEffect(() => {
+    if (mountId === null || hasThreads) {
+      return;
+    }
+    if (isOtherHost) {
+      void refreshReviewSource({ sessionId, silent: true });
+      return;
+    }
+    if (hasMountRequest) {
+      void refreshSessionPrDetail(sessionId, { mountId, silent: true });
+    }
+  }, [
+    hasMountRequest,
+    hasThreads,
+    isOtherHost,
+    mountId,
+    refreshReviewSource,
+    refreshSessionPrDetail,
+    sessionId,
+  ]);
+
+  const hostRows = useMemo(
+    () =>
+      new Map(
+        buildResolveQueueRows({
+          entries: queueItems.filter((entry) => entry.thread.originKind !== 'diff_comment'),
+          attempts,
+          deliveryReceipts: [],
+          comments,
+        }).map((row) => [row.thread.threadId, row] as const),
+      ),
+    [attempts, comments, queueItems],
+  );
+
   const threads = useMemo(() => {
     if (host === null || prNumber === null) {
       return NO_THREADS;
@@ -50,30 +103,32 @@ export const useDiffReviewThreads = ({ sessionId, mountId }: Params): DiffReview
     const capabilities = REVIEW_SOURCE_CAPABILITIES[host];
     return groupThreads(comments).flatMap((thread): ReadonlyArray<DiffThread> => {
       const { head } = thread;
-      if (
-        head.source !== 'review' ||
-        head.threadId == null ||
-        head.outdated === true ||
-        head.path === undefined
-      ) {
+      if (head.source !== 'review' || head.threadId == null || head.path === undefined) {
         return [];
       }
-      const isResolved = head.resolved === true;
+      const row = hostRows.get(head.threadId) ?? null;
+      const status = hostThreadStatusOf({
+        row,
+        isResolved: head.resolved === true,
+        isOutdated: head.outdated === true,
+      });
       return [
         {
           id: hostDiffThreadId({ threadId: head.threadId }),
           filePath: head.path,
           anchor: head.line === undefined ? null : { side: 'new', lineNumber: head.line },
           body: head.body,
-          tone: 'neutral',
+          tone: status.tone,
           author: head.author,
           authorAvatarUrl: head.authorAvatarUrl,
           isAgent: false,
           source: 'host',
           host,
           createdAt: head.createdAt,
-          statusLabel: isResolved ? 'Resolved' : 'Open',
-          isResolved,
+          statusLabel: status.label,
+          isResolved: status.isDone,
+          isOutdated: head.outdated === true,
+          ...(row !== null && { fixTarget: { sessionId, threadId: head.threadId } }),
           replies: thread.replies.map((reply) => ({
             id: reply.id,
             author: reply.author,
@@ -88,7 +143,7 @@ export const useDiffReviewThreads = ({ sessionId, mountId }: Params): DiffReview
         },
       ];
     });
-  }, [comments, host, prNumber]);
+  }, [comments, host, hostRows, prNumber, sessionId]);
 
   const onReply = useCallback(
     (id: string, body: string) =>

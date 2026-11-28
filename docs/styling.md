@@ -268,13 +268,7 @@ narrow tool rail is what lets its narrow panel push at 1024
 page while the tools push floats alone, left of the dock, and the tools stay
 beside the page.
 `DrawerColumnGrid.test.tsx` pins the order, the widths, the stack, the focus
-border and the turn key. The session Desk is a frame of its own (`isDesk`): the
-page draws a `DockLane` beside its 300px column, `DrawerColumn` lays the aside
-over that lane and keeps the rail on the page, and the solver has no page
-minimum there: the detail and the grid fill the lane at their saved
-proportions, shrink in the same order, stack, then turn the tools after the
-second into tabs of one cell, and never lie over anything
-(`dockLayoutDesk.test.ts`, `DrawerColumnDesk.test.tsx`).
+border and the turn key.
 
 **The places rail never folds.** `AppShell` takes it as `leftRail` and gives
 it an `auto` grid column, so the rail's own width (64px, 44px under a 1100px
@@ -285,7 +279,7 @@ The top bar's left zone starts with Sessions, then the workspace identity and
 Repositories. It adds `--titlebar-inset`, which defaults to 0px in
 `styles.css`; on macOS `useTitlebarInset` raises it to 72px so the traffic
 lights, drawn inside the bar by the overlay title bar, never sit on a control,
-and drops it back to 0px in full screen. A window without a top bar (Home)
+and drops it back to 0px in full screen. A window without a top bar (Workspaces)
 keeps a 36px drag strip at its top edge instead.
 
 ## The content column
@@ -491,7 +485,7 @@ reading column is 80px narrower, so the head moves in by 40px. The pure geometry
 No view picks its own width or its own centring. The column changes only when
 the window changes or the right drawer opens, never because you moved from
 Overview to Review to a chat. `app/components/StudioFrame/columnContract.test.ts` fails under `features/` on any
-`max-w-[Nch]`, any `max-w-[Npx]` (Search or run, the onboarding wizard and Home, on one 600px column, are the
+`max-w-[Nch]`, any `max-w-[Npx]` (Search or run, the onboarding wizard and Workspaces, on one 600px column, are the
 listed exceptions), any `max-w-[Nrem]` of 24rem or more, any `mx-auto` outside
 the Board frame and two centred empty states (centring is `PageColumn`'s job,
 and the test asserts it centres `column`, `reading` and `measure` and not `full`), `PANE_RHYTHM.measure`,

@@ -129,7 +129,12 @@ type VerbsParams = {
 const verbsOf = ({ tile }: VerbsParams): ReadonlyArray<HTMLElement> =>
   within(tile)
     .queryAllByRole('button')
-    .filter((button) => button.closest('[data-board-actions]') === null);
+    .filter(
+      (button) =>
+        button.closest('[data-board-actions]') === null &&
+        button.closest('[data-board-word]') === null &&
+        !button.hasAttribute('data-board-word'),
+    );
 
 const show = async () => {
   const view = render(element());
@@ -223,7 +228,7 @@ describe('the project blocks on the Overview', () => {
     expect([...names].sort()).toEqual(['ledger-core', 'payments-api']);
   });
 
-  it('draws one tile per branch under its project: its name and one state chip', async () => {
+  it('draws one tile per branch under its project: its name and one state word in the facts line', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
@@ -232,18 +237,21 @@ describe('the project blocks on the Overview', () => {
       'payments-api',
     );
     expect(tenant.textContent).not.toContain('payments-api');
-    expect(tenant.querySelectorAll('[data-board-chip]')).toHaveLength(1);
-    expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('Asks you');
+    expect(tenant.querySelectorAll('[data-board-word]')).toHaveLength(1);
+    expect(tenant.querySelector('[data-board-facts] [data-board-word]')?.textContent).toBe(
+      'Asks you',
+    );
+    expect(tenant.querySelector('[data-board-chip]')).toBeNull();
     await vi.waitFor(() =>
       expect(tileOf({ branch: TENANT }).querySelector('[data-board-facts]')?.textContent).toBe(
-        'PR #309 · 1 question waits',
+        'PR #309 · Asks you',
       ),
     );
     const ledger = tileOf({ branch: LEDGER });
     expect(ledger.closest('[data-board-project]')?.getAttribute('data-board-project')).toBe(
       'ledger-core',
     );
-    expect(ledger.querySelector('[data-board-chip]')?.textContent).toBe('Running');
+    expect(ledger.querySelector('[data-board-word]')?.textContent).toBe('Running');
   });
 
   it('heads each project block with its name, no row count, and its worktrees door', async () => {
@@ -309,7 +317,7 @@ describe('the project blocks on the Overview', () => {
     expect(call?.[0]).toMatchObject({ to: { view: { lens: 'questions' } } });
   });
 
-  it('shows the first move in Next and never repeats it on the row', async () => {
+  it('shows the first move in Next and gives the row only the action of its own state', async () => {
     seedCentralColumn({ kind: 'branches' });
     act(() => {
       useAppStore.setState({ sessionOpenQuestions: {} });
@@ -321,8 +329,12 @@ describe('the project blocks on the Overview', () => {
         .getAllByRole('button')
         .map((button) => button.textContent),
     ).toContain('Rebase');
-    expect(verbsOf({ tile: tileOf({ branch: TENANT }) })).toHaveLength(0);
-    expect(tileOf({ branch: TENANT }).querySelector('[data-board-chip]')?.textContent).toBe(
+    expect(
+      verbsOf({ tile: tileOf({ branch: TENANT }) })
+        .filter((button) => button.getAttribute('role') !== 'link')
+        .map((button) => button.textContent),
+    ).toEqual(['Open check']);
+    expect(tileOf({ branch: TENANT }).querySelector('[data-board-word]')?.textContent).toBe(
       'static-analysis failed',
     );
   });
@@ -335,26 +347,16 @@ describe('the project blocks on the Overview', () => {
     await show();
     const tenant = tileOf({ branch: TENANT });
 
-    expect(tenant.querySelectorAll('[data-board-chip]')).toHaveLength(1);
-    expect(tenant.querySelector('[data-board-chip]')?.textContent).toBe('static-analysis failed');
+    expect(tenant.querySelectorAll('[data-board-word]')).toHaveLength(1);
+    expect(tenant.querySelector('[data-board-chip]')).toBeNull();
+    expect(tenant.querySelector('[data-board-word]')?.textContent).toBe('static-analysis failed');
     expect(
-      [...tenant.querySelectorAll('[data-board-facts] button, [data-board-facts] a')].length,
+      [
+        ...tenant.querySelectorAll(
+          '[data-board-facts] button:not([data-board-word]), [data-board-facts] a',
+        ),
+      ].length,
     ).toBe(0);
-  });
-
-  it('keeps the full check name in the tooltip of a chip that may cut it', async () => {
-    seedCentralColumn({ kind: 'branches' });
-    act(() => {
-      useAppStore.setState({ sessionOpenQuestions: {} });
-    });
-    await show();
-    const chip = tileOf({ branch: TENANT }).querySelector('[data-board-chip]')?.firstElementChild;
-
-    if (!(chip instanceof HTMLElement)) {
-      throw new Error('The chip must be an element.');
-    }
-    fireEvent.mouseEnter(chip);
-    expect((await screen.findByRole('tooltip')).textContent).toBe('static-analysis failed');
   });
 
   it('holds one target and at most one verb per row, and one door per project head', async () => {
@@ -514,6 +516,7 @@ describe('the project blocks on the Overview', () => {
         (node) =>
           node.closest('[data-board-actions]') === null &&
           node.closest('[data-section-actions]') === null &&
+          !node.hasAttribute('data-board-word') &&
           !node.hasAttribute('data-project-worktrees') &&
           !node.hasAttribute('data-project-new-branch'),
       ),
@@ -530,7 +533,7 @@ describe('the project blocks on the Overview', () => {
     }
   });
 
-  it('keeps a merged branch in its block with no chip and no button until a cleanup is proposed', async () => {
+  it('keeps a merged branch in its block with its word and no button until a cleanup is proposed', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
@@ -542,6 +545,7 @@ describe('the project blocks on the Overview', () => {
       'payments-api',
     );
     expect(tenant.querySelector('[data-board-chip]')).toBeNull();
+    expect(tenant.querySelector('[data-board-word]')?.textContent).toBe('Merged');
     expect(tenant.querySelector('[data-board-facts]')?.textContent).toContain('Merged');
     expect(tenant.querySelector('[data-board-facts]')?.textContent).not.toContain('Closed');
     expect(verbsOf({ tile: tenant })).toHaveLength(0);
@@ -615,7 +619,7 @@ describe('the project blocks on the Overview', () => {
     expect(screen.queryByText(NAMES.notOnABranch)).toBeNull();
   });
 
-  it('keeps a closed branch with no chip and no delete, and takes it back when reopened', async () => {
+  it('keeps a closed branch with its word and no delete, and takes it back when reopened', async () => {
     seedCentralColumn({ kind: 'branches' });
     await show();
 
@@ -634,7 +638,9 @@ describe('the project blocks on the Overview', () => {
     setRequestState({ state: 'open' });
     await settle();
 
-    expect(tileOf({ branch: TENANT }).querySelector('[data-board-chip]')).not.toBeNull();
+    expect(tileOf({ branch: TENANT }).querySelector('[data-board-word]')?.textContent).not.toBe(
+      'Closed',
+    );
   });
 
   it('says spend and agent time once, in the facts row, with no tiles', async () => {

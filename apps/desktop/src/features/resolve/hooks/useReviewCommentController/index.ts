@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
+import { threadMountIdOf } from '../../../../store/slices/review-source/threadMountIdOf';
 import { useAppStore } from '../../../../store';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { runObjectAction } from '../../../actions/registry';
@@ -230,10 +231,12 @@ export const useReviewCommentController = ({
       setIsSubmitting(true);
       setError(threadId, null);
       try {
+        const mountId = threadMountIdOf({ state: useAppStore.getState(), sessionId, threadId });
         const started = await startBatch({
           getState: useAppStore.getState,
           sessionId,
           threadIds: [threadId],
+          ...(mountId !== null && { mountId }),
           launchChoice: launchChoiceOf({
             routing: draftRoutingOf({ state: useAppStore.getState(), sessionId }),
             commitStyle: null,

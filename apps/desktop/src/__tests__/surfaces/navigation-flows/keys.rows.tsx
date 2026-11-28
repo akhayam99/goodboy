@@ -439,19 +439,30 @@ export const KEY_ROWS: ReadonlyArray<Row> = [
     },
   }),
   keyRow({
+    id: 'app.close',
+    note: 'on a session tab with nothing left to close, closes the session to Home',
+    open: async () => {
+      await pressed('app.close', document.body);
+    },
+    lands: async () => {
+      await heading('Home');
+      expect(useAppStore.getState().currentSessionId).toBeNull();
+    },
+  }),
+  keyRow({
     id: 'nav.up',
-    note: 'on a session tab goes up to the board, as on the Overview',
+    note: 'on a session tab goes up to Home, as on the Overview',
     open: async () => {
       await openCrumb(/^Artifacts/);
       await press('nav.up')();
     },
-    lands: () => heading('Board'),
+    lands: () => heading('Home'),
   }),
   keyRow({
     id: 'nav.up',
-    note: 'on the Overview goes up to the board',
+    note: 'on the Overview goes up to Home',
     open: press('nav.up'),
-    lands: () => heading('Board'),
+    lands: () => heading('Home'),
   }),
   keyRow({
     id: 'nav.up',
@@ -2463,24 +2474,32 @@ export const SESSION_KEY_ROWS: ReadonlyArray<Row> = [
   }),
   keyRow({
     id: 'terminal.studio',
-    note: 'on the Overview splits the page into the Desk',
+    note: 'on the Overview opens the Terminal in the dock beside the page',
     open: async () => {
       await press('terminal.studio')();
     },
-    lands: async (ctx) => {
-      await screen.findByRole('complementary', { name: 'Desk' });
-      expect(useAppStore.getState().sessionFace[ctx.sessionId]).toBe('desk');
+    lands: async () => {
+      await waitFor(() =>
+        expect(
+          useAppStore
+            .getState()
+            .drawerGrid.columns.flat()
+            .map((panel) => panel.kind),
+        ).toContain('terminal'),
+      );
     },
   }),
   keyRow({
     id: 'nav.up',
-    note: 'on the Desk goes up to the board, as on the Overview',
+    note: 'with the Terminal open in the dock goes up to Home, as on the Overview',
     open: async () => {
       await press('terminal.studio')();
-      await screen.findByRole('complementary', { name: 'Desk' });
+      await waitFor(() =>
+        expect(useAppStore.getState().drawerGrid.columns.length).toBeGreaterThan(0),
+      );
       await press('nav.up')();
     },
-    lands: () => heading('Board'),
+    lands: () => heading('Home'),
   }),
   ...SELECTION_KEY_ROWS,
 ];
