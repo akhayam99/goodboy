@@ -15,9 +15,9 @@ type Props = {
   readonly worktree: TerminalWorktree;
   readonly targets: ReadonlyArray<TerminalTarget>;
   readonly isBranchless: boolean;
-  readonly hasTrackTabs: boolean;
   readonly busyPaths: ReadonlySet<string>;
   readonly elsewhere: ReadonlyArray<ElsewhereShell>;
+  readonly elsewhereNote: string | null;
   readonly onPickTarget: (target: TerminalTarget) => void;
   readonly onPickSessionFolder: () => void;
   readonly onPickAll: () => void;
@@ -30,9 +30,9 @@ export const TerminalScopePicker = ({
   worktree,
   targets,
   isBranchless,
-  hasTrackTabs,
   busyPaths,
   elsewhere,
+  elsewhereNote,
   onPickTarget,
   onPickSessionFolder,
   onPickAll,
@@ -69,8 +69,8 @@ export const TerminalScopePicker = ({
       searchable
       valueLabel={
         <span className="flex min-w-0 items-center gap-1 text-ui">
-          {label.project === null || hasTrackTabs ? null : (
-            <span className={`shrink-0 whitespace-pre ${TEXT_ROLE.secondary}`}>
+          {label.project === null ? null : (
+            <span className={`min-w-0 shrink-[8] truncate whitespace-pre ${TEXT_ROLE.secondary}`}>
               {`${label.project} · `}
             </span>
           )}
@@ -81,6 +81,9 @@ export const TerminalScopePicker = ({
             <span className={`min-w-0 shrink-[4] truncate font-mono ${TEXT_ROLE.secondary}`}>
               {`· ${label.folder}`}
             </span>
+          )}
+          {elsewhereNote === null ? null : (
+            <StatusDot tone="info" size="sm" ariaLabel={elsewhereNote} />
           )}
         </span>
       }

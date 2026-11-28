@@ -136,36 +136,37 @@ const shownTerminal = (): TerminalTab | null => {
   );
 };
 
-describe('one tab per track', () => {
-  it('names each mounted project, with the branch and the folder in the head', async () => {
+describe('one scope per track', () => {
+  it('names the branch and the folder in the one row, and lists each mounted project in the menu', async () => {
     renderDrawer({ terminalId: TAB.id });
 
-    const tracks = await screen.findByRole('tablist', { name: 'Worktrees' });
-    expect(
-      within(tracks)
-        .getAllByRole('tab')
-        .map((tab) => tab.textContent),
-    ).toEqual(['payments-api', 'notify-relay']);
-    expect(
-      within(tracks).getByRole('tab', { name: 'payments-api' }).getAttribute('aria-selected'),
-    ).toBe('true');
-    screen.getByText(payments.branch);
-    screen.getByText(`· ${session.id}`);
+    const scope = await screen.findByRole('combobox', { name: 'Terminal folder' });
+    expect(screen.queryByRole('tablist', { name: 'Worktrees' })).toBeNull();
+    expect(scope.closest('[data-dock-tool-row]')).not.toBeNull();
+    expect(document.querySelectorAll('[data-dock-tool-row]')).toHaveLength(1);
+    within(scope).getByText(payments.branch);
+    within(scope).getByText(`· ${session.id}`);
+
+    fireEvent.click(scope);
+    await screen.findByRole('option', { name: /payments-api/ });
+    screen.getByRole('option', { name: /notify-relay/ });
   });
 
-  it('opens the shell of a track on its first focus and reuses it after', async () => {
+  it('opens the shell of a track on its first pick and reuses it after', async () => {
     renderDrawer({ terminalId: TAB.id });
-    const tracks = await screen.findByRole('tablist', { name: 'Worktrees' });
+    const scope = await screen.findByRole('combobox', { name: 'Terminal folder' });
 
+    fireEvent.click(scope);
     act(() => {
-      fireEvent.click(within(tracks).getByRole('tab', { name: 'notify-relay' }));
+      fireEvent.click(screen.getByRole('option', { name: /notify-relay/ }));
     });
     const opened = shownTerminal();
     expect(opened?.cwd).toBe(relay.worktreePath);
     expect(store.getState().terminalTabs[session.id]).toHaveLength(2);
 
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Terminal folder' }));
     act(() => {
-      fireEvent.click(within(tracks).getByRole('tab', { name: 'payments-api' }));
+      fireEvent.click(screen.getByRole('option', { name: /payments-api/ }));
     });
     expect(shownTerminal()?.id).toBe(TAB.id);
     expect(store.getState().terminalTabs[session.id]).toHaveLength(2);

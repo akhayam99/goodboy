@@ -29,6 +29,7 @@ type Props = {
   readonly onCloseLastIdle?: () => void;
   readonly isShortcutEnabled?: boolean;
   readonly isUnderHead?: boolean;
+  readonly scope?: ReactNode;
   readonly hasPorts?: boolean;
   readonly folderAction?: ReactNode;
   readonly actions?: ReactNode;
@@ -51,6 +52,7 @@ export const TerminalTabStrip = ({
   onCloseLastIdle,
   isShortcutEnabled = true,
   isUnderHead = false,
+  scope = null,
   hasPorts = true,
   folderAction = null,
   actions = null,
@@ -128,6 +130,7 @@ export const TerminalTabStrip = ({
       newShortcut="terminal.newTab"
       onNew={onNew}
       isUnderHead={isUnderHead}
+      scope={scope}
       trailing={
         <>
           {folderAction}

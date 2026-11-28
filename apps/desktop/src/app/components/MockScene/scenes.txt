@@ -522,6 +522,8 @@ diff-peek-more
 diff-peek-open
 diff-threads
 diff-tree-indent
+dock-chrome-merged
+dock-chrome-monitor
 dock-pair
 dock-stack
 dock-three

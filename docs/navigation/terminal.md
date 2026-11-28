@@ -44,26 +44,28 @@ owner `ws:<workspaceId>`, drawer `sessionId: null`).
 
 ### The dock header
 
-- The terminal icon, then the scope picker in the title's place
-  (`TerminalScopePicker`, a combobox named `Terminal folder`, as `DrawerFrame`'s
-  `titleContent`; the region stays `Terminal`): the branch in mono, never the
-  worktree folder hash.
+- The head is the 40px `DockPanelHead`: the terminal icon and `Terminal`, the More
+  menu, Open full page and Close. Under it sits one tool row (`DockToolRow` from
+  `@goodboy/ui`, 36px, drawn by `ToolTabStrip`): the scope chip first, then the shell
+  tabs and New tab, then the Scripts menu and the ports at the end. Nothing else
+  stacks above the shell.
+- The scope chip is `TerminalScopePicker`, a combobox named `Terminal folder`: the
+  project, then the branch in mono (the project truncates first), never the worktree
+  folder hash. A small info dot on it counts the running shells of other sessions
+  (`elsewhereNoteOf`, the dot's label, for example `1 shell running in other
+sessions`).
 - Its menu names each place `project · branch`: this session's worktrees (an info dot
   when a shell there runs a process), the main checkout, the workspace folder and,
   without a branch, the session folder. A pick opens or reuses a shell there
   (`openSessionTerminal`, a workspace-owned tab for the workspace folder); each scope
-  keeps its own tabs, and nothing is killed.
-- Under the picker, `N shells running in other sessions` (`elsewhereNoteOf`, a button
-  that opens the picker) counts the running shells of the other sessions. The menu's
-  `Elsewhere` group names them by session, project and branch; a pick remembers that
-  folder for the session and opens it (`pickElsewhereShell`), so the shell shown is the
-  one picked.
-- Then the short worktree chip (truncating before the buttons), Open full page and
-  Close, over the page's tab strip, so drawer and page show the same tabs. The folder
-  pill ends with "All terminals" (the Terminal page), and a Scripts menu ends the tab
-  row (`TerminalScriptsMenu`: a pick opens a tab in the pill's folder and types the
-  command, `scriptCommandOf`). The Scripts chord still opens the old drawer until it
-  is removed.
+  keeps its own tabs, and nothing is killed. A session with several worktrees has no
+  strip of worktree tabs: the menu is the switch.
+- The menu's `Elsewhere` group names the running shells of other sessions by session,
+  project and branch; a pick remembers that folder for the session and opens it
+  (`pickElsewhereShell`), so the shell shown is the one picked. `All terminals` opens
+  the Terminal page, so drawer and page show the same tabs, and a Scripts menu ends
+  the row (`TerminalScriptsMenu`: a pick opens a tab in the chip's folder and types
+  the command, `scriptCommandOf`).
 - Closing the drawer never kills a shell: the tabs stay in the Terminal list under
   the session, and the drawer closes by itself when its worktree has none left. A
   worktree that goes away under an open terminal shows "This worktree was removed".

@@ -70,7 +70,7 @@ describe('the window dock scenes', () => {
     const Scene = WINDOW_DOCK_SCENES['window-dock-board-terminal'];
     render(<Scene />);
 
-    await screen.findByText('1 shell running in other sessions');
+    await screen.findByLabelText('1 shell running in other sessions');
     expect(useAppStore.getState().drawer).toMatchObject({ kind: 'terminal', sessionId: null });
   });
 

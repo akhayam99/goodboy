@@ -479,12 +479,8 @@ export const useDockDrag = ({
       if (grid === null) {
         return;
       }
-      event.preventDefault();
-      try {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      } catch {
-        pointRef.current = { x: event.clientX, y: event.clientY };
-      }
+      const holder = event.currentTarget;
+      pointRef.current = { x: event.clientX, y: event.clientY };
       const pointerId = typeof event.pointerId === 'number' ? event.pointerId : null;
       pressRef.current = dockPressOf({
         grid,
@@ -546,6 +542,12 @@ export const useDockDrag = ({
             if (distance < DRAG_THRESHOLD_PX) {
               return;
             }
+            try {
+              holder.setPointerCapture(move.pointerId);
+            } catch {
+              pointRef.current = { x: move.clientX, y: move.clientY };
+            }
+            window.getSelection()?.removeAllRanges();
             activate({ grid, press });
           }
           const point = { x: move.clientX, y: move.clientY, isSwap: move.altKey };
