@@ -144,14 +144,16 @@ describe('RoleCandidates', () => {
     const rows = await rowsByMark();
     const best = rows.filter((row) => row.mark === 'best');
     expect(best).toHaveLength(1);
-    expect(best[0]?.text).toContain('#1 in your order');
+    expect(best[0]?.text).toContain('is #1 in your order');
     expect(best[0]?.text).toContain('62% used');
     const out = rows.filter((row) => row.mark === 'out');
     expect(out.length).toBeGreaterThan(0);
     expect(
-      out.every((row) => row.text.includes('agents that write code do not run here yet')),
+      out.every((row) =>
+        row.text.includes("cannot block Cursor's pushes yet, so read-only jobs only"),
+      ),
     ).toBe(true);
-    expect(rows.some((row) => row.text.includes('#2 in your order'))).toBe(false);
+    expect(rows.some((row) => row.text.includes('is #2 in your order'))).toBe(false);
   });
 
   it('drops a turns read that answers after a newer one', async () => {
@@ -197,7 +199,7 @@ describe('RoleCandidates', () => {
 
   it('moves the mark off a provider whose models get hidden and says why it is left out', async () => {
     seed({ isByLoad: false });
-    expect(await bestText()).toContain('#1 in your order');
+    expect(await bestText()).toContain('is #1 in your order');
 
     act(() => {
       useAppStore.setState({
@@ -209,7 +211,7 @@ describe('RoleCandidates', () => {
       });
     });
 
-    expect(await bestText()).toContain('#3 in your order');
+    expect(await bestText()).toContain('is #3 in your order');
     const excluded = (await rowsByMark()).filter((row) => row.mark === 'excluded');
     expect(excluded.map((row) => row.text)).toContain('Claudehidden in Settings');
   });
@@ -243,7 +245,7 @@ describe('RoleCandidates', () => {
     await act(async () => {
       pending.answer([]);
     });
-    expect(await bestText()).toContain('#1 in your order');
+    expect(await bestText()).toContain('is #1 in your order');
   });
 
   it('moves the mark to Codex, the provider with the most room left, under By load', async () => {
@@ -252,7 +254,7 @@ describe('RoleCandidates', () => {
     const rows = await rowsByMark();
     const best = rows.filter((row) => row.mark === 'best');
     expect(best).toHaveLength(1);
-    expect(best[0]?.text).toContain('#3 in your order');
+    expect(best[0]?.text).toContain('is #3 in your order');
     expect(best[0]?.text).toContain('18% used');
   });
 });

@@ -74,10 +74,12 @@ describe('an agent names its provider, model and why', () => {
     ).getAllByRole('listitem');
     expect(rows).toHaveLength(5);
     const pick = rows.find((row) => row.getAttribute('aria-current') === 'true');
-    expect(pick?.textContent).toContain('#3 in your order · 18% used · 2 agents in the last hour');
+    expect(pick?.textContent).toContain(
+      'Codex is #3 in your order · 18% used · 2 agents in the last hour',
+    );
     const struck = rows.filter((row) => row.hasAttribute('data-candidate-struck'));
     expect(struck.map((row) => row.textContent)).toEqual([
-      expect.stringContaining('agents that write code do not run here yet'),
+      expect.stringContaining("cannot block Cursor's pushes yet, so read-only jobs only"),
     ]);
   });
 
@@ -86,12 +88,14 @@ describe('an agent names its provider, model and why', () => {
 
     within(brief).getByText('Claude');
     within(brief).getByText('Why Claude:', { exact: false });
-    within(brief).getByText(/The Lead asked for Cursor Sonnet 5.5: agents that write code/);
+    within(brief).getByText(/The Lead asked for Cursor Sonnet 5.5: cannot block Cursor/);
     within(brief).getByText('The Lead said: "Cursor has room and Sonnet fits a standard test."');
     expect(within(brief).queryByText(/used Sonnet 5.5/)).toBeNull();
 
     fireEvent.click(within(brief).getByRole('button', { name: 'Candidates it weighed' }));
-    within(brief).getByText(/asked by the Lead · agents that write code do not run here yet/);
+    within(brief).getByText(
+      /asked by the Lead · cannot block Cursor's pushes yet, so read-only jobs only/,
+    );
   });
 
   it('keeps the line of an older delegation, with no why and no candidates', async () => {

@@ -1,5 +1,4 @@
 import {
-  CANDIDATE_CAUSES,
   catalogModelForId,
   type Candidate,
   type CandidateCause,
@@ -8,7 +7,10 @@ import {
 import { cappedRoutingReason } from '@goodboy/core/orchestrator';
 import { isProviderId } from '@goodboy/types/helpers';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
-import { childRoutingReason } from '../../runtime/auto/childRouting/childRoutingReason';
+import {
+  askedCauseTextOf,
+  childRoutingReason,
+} from '../../runtime/auto/childRouting/childRoutingReason';
 
 type AskedParams = {
   readonly provider: string;
@@ -45,6 +47,6 @@ export const stepRoutingReason = ({ why }: Params): string => {
     return cappedRoutingReason(line);
   }
   return cappedRoutingReason(
-    `${askedLabel(why.asked)}: ${CANDIDATE_CAUSES[why.cause].text}. ${line}.`,
+    `${askedLabel(why.asked)}: ${askedCauseTextOf({ asked: why.asked, cause: why.cause })}. ${line}.`,
   );
 };

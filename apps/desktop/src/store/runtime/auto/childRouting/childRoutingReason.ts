@@ -1,5 +1,5 @@
 import {
-  CANDIDATE_CAUSES,
+  candidateCauseTextOf,
   catalogModelForId,
   type Candidate,
   type CandidateCause,
@@ -57,6 +57,17 @@ const askedLabel = ({ provider, model }: AskedParams): string => {
   return `${PROVIDER_LABEL[provider]} ${label}`;
 };
 
+type AskedCauseParams = {
+  readonly asked: AskedParams;
+  readonly cause: CandidateCause;
+};
+
+export const askedCauseTextOf = ({ asked, cause }: AskedCauseParams): string =>
+  candidateCauseTextOf({
+    cause,
+    providerName: isProviderId(asked.provider) ? PROVIDER_LABEL[asked.provider] : null,
+  });
+
 type NoAccessParams = {
   readonly asked: AskedParams;
   readonly candidate: Candidate;
@@ -101,5 +112,5 @@ export const childRoutingReason = ({ why }: Params): string => {
   if (why.cause === 'no-access') {
     return noAccessLine({ asked: why.asked, candidate: why.candidate });
   }
-  return `The Lead asked for ${askedLabel({ ...why.asked })}: ${CANDIDATE_CAUSES[why.cause].text}. ${line}.`;
+  return `The Lead asked for ${askedLabel({ ...why.asked })}: ${askedCauseTextOf({ asked: why.asked, cause: why.cause })}. ${line}.`;
 };

@@ -1,4 +1,10 @@
-import { CANDIDATE_CAUSES, catalogModelForId } from '@goodboy/core/providers';
+import {
+  CANDIDATE_CAUSES,
+  candidateCauseTextOf,
+  candidateOrderFactOf,
+  catalogModelForId,
+  type CandidateCause,
+} from '@goodboy/core/providers';
 import type { AutoRoutingSource, ProviderId } from '@goodboy/types';
 import { isProviderId } from '@goodboy/types/helpers';
 import { modelLineOf } from '../../providers/modelLine/modelLineOf';
@@ -40,16 +46,20 @@ type SourceParams = {
 const pickSourceOf = ({ value }: SourceParams): AutoRoutingSource | null =>
   SOURCES.find((source) => source === value) ?? null;
 
-const CAUSE_TEXT: ReadonlyMap<string, string> = new Map(
-  Object.entries(CANDIDATE_CAUSES).map(([cause, copy]) => [cause, copy.text]),
+const CAUSES: ReadonlyArray<CandidateCause> = Object.keys(CANDIDATE_CAUSES).filter(
+  (cause): cause is CandidateCause => cause in CANDIDATE_CAUSES,
 );
 
 type CauseParams = {
   readonly cause: string;
+  readonly providerName: string;
 };
 
-const causeText = ({ cause }: CauseParams): string =>
-  CAUSE_TEXT.get(cause) ?? CANDIDATE_CAUSES['not-listed'].text;
+const causeText = ({ cause, providerName }: CauseParams): string =>
+  candidateCauseTextOf({
+    cause: CAUSES.find((known) => known === cause) ?? 'not-listed',
+    providerName,
+  });
 
 type LabelParams = {
   readonly provider: string;
@@ -108,11 +118,19 @@ const roomText = ({ row }: RowParams): string => {
   return room['isEstimated'] === true ? `about ${rounded}% used, estimated` : `${rounded}% used`;
 };
 
-const usableFacts = ({ row }: RowParams): string => {
+type UsableParams = {
+  readonly row: unknown;
+  readonly providerName: string;
+  readonly isFirstOfProvider: boolean;
+};
+
+const usableFacts = ({ row, providerName, isFirstOfProvider }: UsableParams): string => {
   const order = numberField({ source: row, key: 'order' });
   const load = numberField({ source: row, key: 'load' }) ?? 0;
   return [
-    ...(order === null ? [] : [`#${order} in your order`]),
+    ...(order === null || !isFirstOfProvider
+      ? []
+      : [candidateOrderFactOf({ providerName, order })]),
     roomText({ row }),
     `${load} ${load === 1 ? 'agent' : 'agents'} in the last hour`,
     ...(isJsonRecord(row) && row['isLighter'] === true ? ['lighter model'] : []),
@@ -126,6 +144,7 @@ type CandidateParams = {
   readonly asked: RoutedModel | null;
   readonly isPickTaken: boolean;
   readonly isAskedTaken: boolean;
+  readonly isFirstOfProvider: boolean;
 };
 
 const weighedRowOf = ({
@@ -135,6 +154,7 @@ const weighedRowOf = ({
   asked,
   isPickTaken,
   isAskedTaken,
+  isFirstOfProvider,
 }: CandidateParams): RoutingWhyCandidate | null => {
   const provider = textField({ source: row, key: 'provider' });
   const model = textField({ source: row, key: 'model' });
@@ -152,8 +172,11 @@ const weighedRowOf = ({
     isSameRow({ routed: asked, provider, model, effort });
   const facts =
     cause === null
-      ? usableFacts({ row })
-      : [...(isAsked ? ['asked by the Lead'] : []), causeText({ cause })].join(' · ');
+      ? usableFacts({ row, providerName: providerLabelOf({ provider }), isFirstOfProvider })
+      : [
+          ...(isAsked ? ['asked by the Lead'] : []),
+          causeText({ cause, providerName: providerLabelOf({ provider }) }),
+        ].join(' · ');
   return {
     key: `${provider}:${model}:${effort ?? ''}:${index}`,
     provider: isProviderId(provider) ? provider : null,
@@ -179,6 +202,7 @@ const candidatesOf = ({
 }: CandidatesParams): ReadonlyArray<RoutingWhyCandidate> =>
   listField({ source: routing, key: 'candidates' }).reduce<ReadonlyArray<RoutingWhyCandidate>>(
     (rows, row, index) => {
+      const rowProvider = textField({ source: row, key: 'provider' }) ?? '';
       const candidate = weighedRowOf({
         row,
         index,
@@ -186,6 +210,10 @@ const candidatesOf = ({
         asked,
         isPickTaken: rows.some((taken) => taken.isPick),
         isAskedTaken: rows.some((taken) => taken.isAsked),
+        isFirstOfProvider: !rows.some(
+          (taken) =>
+            !taken.isStruck && taken.providerLabel === providerLabelOf({ provider: rowProvider }),
+        ),
       });
       return candidate === null ? rows : [...rows, candidate];
     },

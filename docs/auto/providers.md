@@ -49,8 +49,7 @@ Lead copies `provider`, `model` and `effort` from a row and says why in
 `resolveChildRouting` builds the candidates for the child's role and difficulty
 (`buildCandidates`, scope `helper`) and checks the pick (`checkPick`). A pick
 that passes runs as sent and keeps the Lead's line. A pick a guard removes moves to the best candidate by
-the rule, and the reason says so ("The Lead asked for Cursor Sonnet 5.5: agents
-that write code do not run here yet. Claude: first in your order."). A child with
+the rule, and the reason says so ("The Lead asked for Cursor Sonnet 5.5: cannot block Cursor's pushes yet, so read-only jobs only. Claude: first in your order."). A child with
 no pick takes the best by the rule.
 
 The guards: Off, not connected, out of room, cooling down, a writer on Cursor,

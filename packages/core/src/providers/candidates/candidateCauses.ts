@@ -42,8 +42,14 @@ export const CANDIDATE_CAUSES = {
     text: 'an agent for this role did not start here',
     adjustment: 'disconnected',
   },
-  'not-for-helpers': { text: 'the Lead does not start agents here', adjustment: 'disconnected' },
-  writer: { text: 'agents that write code do not run here yet', adjustment: 'disconnected' },
+  'not-for-helpers': {
+    text: 'cannot keep it read-only yet, so not used',
+    adjustment: 'disconnected',
+  },
+  writer: {
+    text: 'cannot block its pushes yet, so read-only jobs only',
+    adjustment: 'disconnected',
+  },
   'no-model': { text: 'no model here fits this step', adjustment: 'unknown_model' },
   hidden: { text: 'hidden in Settings', adjustment: 'hidden' },
   'no-access': { text: 'not on your account', adjustment: 'hidden' },
@@ -53,3 +59,38 @@ export const CANDIDATE_CAUSES = {
   'unknown-model': { text: 'not a model this build knows', adjustment: 'unknown_model' },
   'not-listed': { text: 'not a candidate for this step', adjustment: 'unknown_model' },
 } as const satisfies Readonly<Record<CandidateCause, CauseCopy>>;
+
+const MAX_CAUSE_LENGTH = 60;
+
+type NamedCauseParams = {
+  readonly name: string;
+};
+
+const NAMED_CAUSE_TEXT: Readonly<
+  Partial<Record<CandidateCause, (params: NamedCauseParams) => string>>
+> = {
+  'not-for-helpers': ({ name }) => `cannot keep ${name} read-only yet, so not used`,
+  writer: ({ name }) => `cannot block ${name}'s pushes yet, so read-only jobs only`,
+};
+
+type CauseTextParams = {
+  readonly cause: CandidateCause;
+  readonly providerName: string | null;
+};
+
+export const candidateCauseTextOf = ({ cause, providerName }: CauseTextParams): string => {
+  const named = NAMED_CAUSE_TEXT[cause];
+  if (named === undefined || providerName === null) {
+    return CANDIDATE_CAUSES[cause].text;
+  }
+  const text = named({ name: providerName });
+  return text.length > MAX_CAUSE_LENGTH ? CANDIDATE_CAUSES[cause].text : text;
+};
+
+type OrderFactParams = {
+  readonly providerName: string;
+  readonly order: number;
+};
+
+export const candidateOrderFactOf = ({ providerName, order }: OrderFactParams): string =>
+  `${providerName} is #${order} in your order`;

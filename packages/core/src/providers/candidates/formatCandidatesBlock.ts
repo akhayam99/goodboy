@@ -5,7 +5,7 @@ import { RUNGS, type Rung } from '../autoRouting/effortLadder';
 import { rungForStep } from '../autoRouting/slotRungs';
 import { buildCandidates } from './buildCandidates';
 import type { CandidateCause } from './candidateCauses';
-import { CANDIDATE_CAUSES } from './candidateCauses';
+import { candidateCauseTextOf } from './candidateCauses';
 import type { Candidate, CandidateInputs, CandidateScope, ProviderRule } from './types';
 
 export const CANDIDATES_BLOCK_BUDGET = 2400;
@@ -243,7 +243,7 @@ const unavailableLine = ({ table }: GuardLinesParams): ReadonlyArray<string> => 
     return [];
   }
   const parts = table.unavailable.map(
-    ({ provider, cause }) => `${provider} (${CANDIDATE_CAUSES[cause].text})`,
+    ({ provider, cause }) => `${provider} (${candidateCauseTextOf({ cause, providerName: null })})`,
   );
   return [`Not available now: ${parts.join(', ')}.`];
 };

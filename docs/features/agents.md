@@ -203,7 +203,7 @@ An agent's page starts with why the Lead started it: the reason for the role, wh
 
 Under the model, one line says why it runs there, in the Lead's words or by your rule. When a guard moved the Lead's pick or changed its effort, the line says why and the Lead's own words follow. When your account cannot run the model the Lead asked for, the agent runs on that provider's next model. The first such agent says so: **Opus 5.5 is not on your Claude account, so this ran on Sonnet 5.5.** An agent started before this release has no why line.
 
-**Candidates it weighed** lists every model it weighed when it started, with its place in your order, how much room was left and its agents in the last hour. The pick is checked, and a model it could not use is struck with the reason.
+**Candidates it weighed** lists every model it weighed when it started. Each shows how much room was left and its agents in the last hour. The first row of a provider also says where that provider sits in your order. A model it could not use is struck with the reason.
 
 Rest on an agent's role glyph to read its whole story. The card shows the task in full and its state with the time. Each model it ran on gets a line with the provider's mark and a small effort meter. Then come its start, its tokens and its cost.
 
